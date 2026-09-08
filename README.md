@@ -36,7 +36,7 @@ Set up your `.env` file:
 cp .env.example .env
 ```
 
-Add your Gemini API key:
+Add your Gemini API key (which you cat get free from Google AI Studio):
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
