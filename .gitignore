@@ -80,3 +80,7 @@ logs/
 ehthumbs.db
 Thumbs.db
 desktop.ini
+
+# ClickUp Integration Scripts & Tooling
+scripts/
+scripts/*
