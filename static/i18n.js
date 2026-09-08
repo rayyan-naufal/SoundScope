@@ -1,0 +1,639 @@
+// --- SoundScope — Internationalization (i18n) Module ---
+// Supports Indonesian (id) and English (en)
+
+const I18N = {
+  id: {
+    // Brand & Top Bar
+    app_subtitle: "AI Studio",
+    sidebar_toggle_tip: "Sembunyikan / Munculkan Sidebar (Ctrl+B)",
+    folder_tip: "Klik untuk mengganti folder musik aktif",
+    change: "Ganti",
+    scan: "Scan",
+    scanning: "Scanning...",
+    scan_tip: "Scan file musik dari folder aktif",
+    search_placeholder: "Cari judul, artis, genre, tahun... (Ctrl+K)",
+    clear_search_tip: "Bersihkan pencarian",
+    api_ready: "AI Ready",
+    api_not_set: "Key Belum Diatur",
+    api_checking: "Memeriksa...",
+    api_tip: "Status API Key Gemini (Google AI Studio)",
+    stat_tracks: "tracks",
+    stat_untagged: "untagged",
+    stat_suggested: "suggested",
+    stat_saved: "saved",
+    settings_tip: "Pengaturan & Model AI (⚙️)",
+
+    // Left Rail
+    rail_status: "Status",
+    status_all: "Semua Lagu",
+    status_untagged: "Belum Di-tag",
+    status_analyzed: "Saran AI",
+    status_saved: "Tersimpan ke File",
+    rail_decades: "Dekade Rilis",
+    all_decades: "Semua Dekade",
+    reset: "Reset",
+    rail_parent_genres: "Genre Utama",
+    all_genres: "Semua Genre",
+    missing_parent_tag: "Tanpa Genre Utama",
+    rail_specific_filters: "Filter Spesifik",
+    reset_all: "Reset All",
+    select_all_core: "Semua Core Genre",
+    select_all_sub: "Semua Subgenre",
+    tempo_toggle_title: "Analisa Tempo / Pace",
+    tempo_toggle_help: "Matikan untuk hemat token & kuota AI.",
+    clear_library: "Clear",
+    clear_library_tip: "Kosongkan daftar tampilan (tidak menghapus file musik)",
+
+    // Toolbar
+    select_all_tip: "Pilih semua baris yang tampil",
+    selected_count: "{n} dipilih",
+    deselect_all: "Batal Pilih",
+    deselect_all_tip: "Batalkan semua pilihan (Esc)",
+    analyze_selected: "Analisa Dipilih",
+    analyze_selected_n: "Analisa Dipilih ({n})",
+    analyze_selected_tip: "Analisa track yang dipilih menggunakan Gemini AI",
+    auto_tag: "Tag Otomatis",
+    auto_tag_n: "Tag Otomatis ({n})",
+    auto_tag_tip: "Analisa semua lagu yang belum memiliki tag",
+    save_to_file: "Simpan ke File",
+    save_to_file_n: "Simpan ke File ({n})",
+    save_to_file_tip: "Tulis tag yang disetujui langsung ke file audio fisik di komputer",
+    tracks_count: "{n} lagu",
+    play_all_tip: "Putar Semua Lagu",
+    shuffle_tip: "Putar Acak",
+
+    // Table Headers
+    th_title_artist: "Judul & Artis",
+    th_year: "Tahun",
+    th_parent: "Parent Genre",
+    th_genre: "Genre",
+    th_subgenre: "Sub-Genre",
+    th_tempo: "Tempo / BPM",
+    th_status: "Status",
+    th_actions: "Aksi",
+
+    // Table Row Actions & Labels
+    action_play_tip: "Putar lagu",
+    action_analyze_ai: "Analisa AI (Gemini)",
+    action_analyze_sound: "Analisa Sampel Audio (15s)",
+    action_edit: "Edit Metadata",
+    action_save: "Simpan Tag ke File",
+    status_saved_label: "SAVED",
+    status_suggested_label: "SUGGESTED",
+    status_untagged_label: "UNTAGGED",
+    status_saving_label: "SAVING...",
+
+    // Empty State
+    empty_title: "Tidak ada lagu ditemukan",
+    empty_desc: "Pilih folder musik atau klik tombol 'Scan' untuk memuat koleksi lagu kamu.",
+    empty_scan_now: "Scan Folder Sekarang",
+
+    // Player Bar
+    player_no_track: "Tidak ada lagu diputar",
+    player_shuffle_tip: "Toggle Shuffle",
+    player_prev_tip: "Lagu Sebelumnya",
+    player_play_tip: "Putar / Jeda (Space)",
+    player_next_tip: "Lagu Berikutnya",
+    player_repeat_tip: "Toggle Repeat / Ulangi",
+    player_mute_tip: "Mute / Unmute",
+
+    // Settings Modal
+    settings_title: "Pengaturan Audio Tool & AI",
+    settings_lang_label: "Bahasa Aplikasi / Language",
+    settings_lang_en: "English (US)",
+    settings_lang_id: "Bahasa Indonesia (ID)",
+    settings_lang_help: "Pilih bahasa tampilan aplikasi (English / Indonesia).",
+    settings_api_label: "Google AI Studio Gemini API Key",
+    settings_api_placeholder: "Tempel API key di sini (AIzaSy...)",
+    settings_api_connected: "Terkoneksi",
+    settings_api_unconfigured: "API Key belum diatur!",
+    settings_api_free_link: "Dapatkan API Key Gratis ↗",
+    settings_cascade_title: "Pilihan Model AI & Urutan Fallback",
+    settings_cascade_help: "Pilih model yang ingin digunakan. Jika memilih lebih dari satu, model pertama akan dipakai sebagai model utama, dan berikutnya sebagai cadangan (fallback) otomatis bila kuota habis. Anda juga bisa memilih hanya satu model.",
+    settings_preset_ultrafast: "⚡ Ultra-Fast (3.1-Lite Saja)",
+    settings_preset_balanced: "⚖️ Seimbang (2.5-Flash + 3.1-Lite)",
+    settings_preset_max: "🧠 Kualitas Maksimal (3.7 + 2.5 + 3.1)",
+    settings_model_single_notice: "(Model tunggal • Tanpa fallback)",
+    settings_model_min_error: "Minimal 1 model harus dipilih!",
+    settings_move_up: "Pindah ke atas (Prioritas lebih tinggi)",
+    settings_move_down: "Pindah ke bawah (Prioritas lebih rendah)",
+    settings_model_primary: "Utama",
+    settings_model_fallback: "Cadangan #{n}",
+    settings_separator_label: "Pemisah Tag Genre di File Audio",
+    settings_sep_semicolon: "Titik Koma ( ; ) — e.g. \"EDM; Techno; Acid Techno\"",
+    settings_sep_slash: "Garis Miring ( / ) — e.g. \"EDM / Techno / Acid Techno\"",
+    settings_sep_comma: "Koma ( , ) — e.g. \"EDM, Techno, Acid Techno\"",
+    settings_tempo_label: "Analisa Tempo & Pace lagu (Slow, Mid-tempo, Fast)",
+    settings_tempo_help: "Jika dimatikan, AI tidak akan menganalisis tempo sehingga menghemat token dan kuota API.",
+    settings_custom_label: "Tulis frame ID3 kustom (PARENT_GENRE, SUBGENRE, DECADE, TEMPO)",
+    settings_custom_help: "Kompatibel dengan Foobar2000, MusicBee, Rekordbox, dan Mp3tag.",
+    settings_close: "Tutup",
+    settings_save: "Simpan Pengaturan",
+
+    // Folder Modal
+    folder_modal_title: "Pilih Folder Musik",
+    folder_modal_label: "Path Direktori Musik di Komputer",
+    folder_modal_placeholder: "Contoh: C:\\Users\\Username\\Music",
+    folder_modal_browse: "Browse...",
+    folder_modal_help: "Kamu bisa menempelkan (paste) path lengkap folder musik dari File Explorer atau klik Browse.",
+    folder_modal_presets: "Preset Cepat",
+    folder_modal_preset_test: "Folder Test (tagger test)",
+    folder_modal_preset_music: "Folder Windows Music",
+    folder_modal_clear_prev: "Kosongkan daftar lagu sebelumnya sebelum scan folder ini",
+    folder_modal_cancel: "Batal",
+    folder_modal_scan_now: "Pilih & Scan Sekarang",
+
+    // Edit Modal
+    edit_modal_title: "Edit Tag Track",
+    edit_title_label: "Judul Lagu",
+    edit_artist_label: "Nama Artis",
+    edit_year_label: "Tahun Rilis",
+    edit_decade_label: "Dekade",
+    edit_parent_label: "Parent Genre",
+    edit_genre_label: "Genre Utama",
+    edit_subgenre_label: "Sub-Genre",
+    edit_tempo_label: "Tempo / BPM",
+    edit_tags_label: "Semua Tag (Koma)",
+    edit_ai_notes: "Catatan Analisis AI",
+    edit_cancel: "Batal",
+    edit_update_suggest: "Update Saran",
+    edit_update_file: "Update & Tulis ke File",
+
+    // Batch Progress Modal
+    progress_title_analyzing: "Menganalisis dengan Gemini AI...",
+    progress_desc_analyzing: "Menghubungi Google AI Studio untuk mengidentifikasi genre, dekade, dan tempo lagu.",
+    progress_batch_analyzing: "Menganalisis Track dengan Gemini AI...",
+    progress_batch_desc: "Memproses {n} track yang dipilih secara berurutan.",
+    progress_batch_done_title: "Analisa Batch Selesai!",
+    progress_batch_done_desc: "Berhasil menganalisis {done} dari {total} track.",
+    progress_batch_saving_title: "Menyimpan Tag ke File Musik...",
+    progress_batch_saving_desc: "Menulis metadata langsung ke file fisik di hard drive...",
+    progress_batch_saved_title: "Semua File Berhasil Disimpan!",
+    progress_cancel: "Batal Analisis",
+    progress_cancelled_title: "Analisis Dibatalkan",
+    progress_cancelled_desc: "Proses dihentikan oleh pengguna. {done} dari {total} track telah diproses.",
+    progress_close: "Tutup",
+    progress_stat_done: "Selesai",
+    progress_stat_remaining: "Sisa",
+    progress_stat_elapsed: "Berjalan",
+    progress_stat_runtime: "Run Time",
+    progress_stat_eta: "Est. Sisa",
+    progress_pacing_active: "Pacing 15 RPM aktif (aman & stabil)",
+    progress_cooldown_active: "Menunggu kuota menit berikutnya ({sec}s)...",
+    progress_batch_done_with_runtime: "Berhasil menganalisis {done} dari {total} track dalam {runtime}.",
+    progress_save_analyzed_btn: "Simpan & Tulis Teranalisis ({n})",
+    progress_stop_and_save_btn: "Hentikan & Simpan ({n})",
+    progress_save_all_btn: "Simpan Semua ke File ({n})",
+    progress_daily_quota_title: "Batas Kuota Harian Gemini Tercapai",
+    progress_daily_quota_desc: "Jatah kuota gratis Gemini hari ini telah habis untuk model yang aktif. Sebanyak {n} lagu berhasil dianalisis. Anda dapat langsung menyimpan tag ke file musik sekarang.",
+    toast_batch_analyzed_runtime: "Analisa {n} track selesai dalam {runtime}!",
+
+    // Toasts & Alerts
+    toast_scan_success: "Berhasil scan {n} file musik",
+    toast_scan_failed: "Scan gagal: {err}",
+    toast_scan_select_folder: "Pilih folder musik terlebih dahulu",
+    toast_clear_confirm: "Kosongkan daftar tampilan lagu?\n\n(File fisik di komputer tidak akan dihapus)",
+    toast_clear_empty: "Daftar lagu sudah kosong",
+    toast_clear_success: "Daftar lagu berhasil dikosongkan",
+    toast_analyze_success: "Analisa berhasil: {parent} → {genre}",
+    toast_analyze_failed: "Analisa gagal: {err}",
+    toast_analyze_sound_start: "Menganalisis audio klip 15 detik...",
+    toast_analyze_sound_success: "Analisa audio klip selesai!",
+    toast_analyze_sound_failed: "Analisa audio gagal: {err}",
+    toast_save_success: "Tag berhasil disimpan ke file audio!",
+    toast_save_failed: "Gagal menyimpan: {err}",
+    toast_batch_saved_success: "Tag tersimpan ke {n} file audio!",
+    toast_batch_all_tagged: "Semua lagu sudah memiliki tag AI",
+    toast_settings_saved: "Pengaturan berhasil disimpan!",
+    toast_tempo_enabled: "Analisa tempo aktif",
+    toast_tempo_disabled: "Analisa tempo dinonaktifkan (hemat token)",
+    toast_search_genre: "🔍 Menampilkan lagu: \"{genre}\"",
+    toast_filter_cleared: "Filter pencarian dibersihkan",
+    chip_search_tip: "Klik untuk mencari & menampilkan lagu {genre}",
+
+    // Player Mode & Spotify-style Experience
+    mode_studio: "Studio",
+    mode_player: "Player",
+    mode_studio_tip: "Mode Editor Tag & Analisa AI (Teknis)",
+    mode_player_tip: "Mode Pemutar Santai Spotify (Bebas Distraksi)",
+    pm_nav_home: "Beranda",
+    pm_nav_playlists: "Playlist Saya",
+    pm_nav_artists: "Artis",
+    pm_nav_albums: "Album",
+    pm_nav_decades: "Dekade",
+    pm_create_playlist: "Buat Playlist",
+    pm_queue_title: "Antrean Lagu",
+    pm_queue_now_playing: "Sedang Diputar",
+    pm_queue_up_next: "Berikutnya",
+    pm_queue_clear: "Bersihkan Antrean",
+    pm_queue_empty: "Antrean kosong",
+    pm_quick_picks: "Pilihan Cepat",
+    pm_recently_played: "Baru Saja Diputar",
+    pm_all_tracks: "Semua Lagu",
+    pm_explore_genres: "Jelajahi Genre",
+    pm_playlist_created: "Playlist berhasil dibuat!",
+    pm_playlist_deleted: "Playlist dihapus",
+    pm_track_added_queue: "Ditambahkan ke antrean",
+    pm_track_added_playlist: "Ditambahkan ke playlist {name}",
+    pm_track_removed_playlist: "Dihapus dari playlist",
+    pm_play_next: "Putar Berikutnya",
+    pm_add_to_queue: "Tambahkan ke Antrean",
+    pm_add_to_playlist: "Tambahkan ke Playlist...",
+    pm_open_in_studio: "Edit Tag di Studio Mode",
+    pm_export_m3u: "Ekspor ke File .m3u",
+    pm_new_playlist_modal_title: "Buat Playlist Baru",
+    pm_playlist_name_label: "Nama Playlist",
+    pm_playlist_desc_label: "Deskripsi",
+    pm_playlist_name_placeholder: "Contoh: 90s Vibes, Chill Rap...",
+    pm_playlist_desc_placeholder: "Deskripsi playlist (opsional)...",
+    pm_btn_create: "Buat Playlist",
+    pm_empty_playlist: "Playlist ini masih kosong. Klik '•••' pada lagu untuk menambahkannya ke sini!",
+    pm_tracks_count: "{n} lagu",
+    pm_nav_genres: "Genre",
+    pm_nav_tempo: "Tempo / Pace",
+    filter_options_title: "Filter Koleksi Lagu",
+    filter_decades: "Dekade",
+    filter_parent_genre: "Parent Genre",
+    filter_genre: "Genre",
+    filter_subgenre: "Sub-Genre",
+    filter_tempo: "Tempo / Pace",
+    filter_all_decades: "Semua Dekade",
+    filter_all_parents: "Semua Parent Genre",
+    filter_all_genres: "Semua Genre",
+    filter_all_subgenres: "Semua Subgenre",
+    filter_all_tempos: "Semua Tempo",
+    filter_reset: "Reset Filter",
+    filter_active_n: "Reset ({n})",
+    tempo_slow: "🐢 Slow (~60-90 BPM)",
+    tempo_mid: "🚶 Mid-tempo (~90-120 BPM)",
+    tempo_fast: "⚡ Fast (~120-145 BPM)",
+    tempo_vfast: "🔥 Very Fast (145+ BPM)",
+    pm_genres_title: "Kategori Genre",
+    pm_genres_subtitle: "Jelajahi koleksi berdasarkan kategori dan ragam genre musik",
+    pm_tempo_title: "Energi & Tempo",
+    pm_tempo_subtitle: "Pilih musik sesuai suasana hati, kecepatan BPM, dan aktivitas Anda",
+    like_song: "Sukai Lagu",
+    unlike_song: "Batal Sukai Lagu",
+    pm_nav_liked: "Lagu yang Disukai",
+    pm_liked_title: "Lagu yang Disukai",
+    pm_liked_subtitle: "Koleksi lagu favorit pilihan Anda yang telah diberi tanda hati (♥)",
+    pm_liked_empty: "Belum ada lagu yang disukai. Klik ikon hati (♥) pada lagu untuk menyimpannya di sini!",
+    filter_liked_only: "Hanya Disukai",
+    toast_track_liked: "Lagu ditambahkan ke Lagu yang Disukai (♥)",
+    toast_track_unliked: "Lagu dihapus dari Lagu yang Disukai"
+  },
+  en: {
+    // Brand & Top Bar
+    app_subtitle: "AI Studio",
+    sidebar_toggle_tip: "Toggle Sidebar (Ctrl+B)",
+    folder_tip: "Click to change active music folder",
+    change: "Change",
+    scan: "Scan",
+    scanning: "Scanning...",
+    scan_tip: "Scan music files from active folder",
+    search_placeholder: "Search title, artist, genre, year... (Ctrl+K)",
+    clear_search_tip: "Clear search",
+    api_ready: "AI Ready",
+    api_not_set: "Key Not Set",
+    api_checking: "Checking...",
+    api_tip: "Gemini API Key Status (Google AI Studio)",
+    stat_tracks: "tracks",
+    stat_untagged: "untagged",
+    stat_suggested: "suggested",
+    stat_saved: "saved",
+    settings_tip: "Settings & AI Models (⚙️)",
+
+    // Left Rail
+    rail_status: "Status",
+    status_all: "All Tracks",
+    status_untagged: "Untagged",
+    status_analyzed: "AI Suggested",
+    status_saved: "Saved to File",
+    rail_decades: "Release Decades",
+    all_decades: "All Decades",
+    reset: "Reset",
+    rail_parent_genres: "Parent Genres",
+    all_genres: "All Genres",
+    missing_parent_tag: "Missing Parent Genre",
+    rail_specific_filters: "Specific Filters",
+    reset_all: "Reset All",
+    select_all_core: "All Core Genres",
+    select_all_sub: "All Subgenres",
+    tempo_toggle_title: "Analyze Tempo / Pace",
+    tempo_toggle_help: "Disable to save AI tokens & quota.",
+    clear_library: "Clear",
+    clear_library_tip: "Clear displayed list (does not delete audio files)",
+
+    // Toolbar
+    select_all_tip: "Select all visible rows",
+    selected_count: "{n} selected",
+    deselect_all: "Deselect All",
+    deselect_all_tip: "Deselect all chosen tracks (Esc)",
+    analyze_selected: "Analyze Selected",
+    analyze_selected_n: "Analyze Selected ({n})",
+    analyze_selected_tip: "Analyze selected tracks with Gemini AI",
+    auto_tag: "Auto-Tag",
+    auto_tag_n: "Auto-Tag ({n})",
+    auto_tag_tip: "Analyze all untagged tracks",
+    save_to_file: "Save to File",
+    save_to_file_n: "Save to File ({n})",
+    save_to_file_tip: "Write accepted tags directly to audio files on disk",
+    tracks_count: "{n} tracks",
+    play_all_tip: "Play All Tracks",
+    shuffle_tip: "Shuffle Play",
+
+    // Table Headers
+    th_title_artist: "Title & Artist",
+    th_year: "Year",
+    th_parent: "Parent Genre",
+    th_genre: "Genre",
+    th_subgenre: "Sub-Genre",
+    th_tempo: "Tempo / BPM",
+    th_status: "Status",
+    th_actions: "Actions",
+
+    // Table Row Actions & Labels
+    action_play_tip: "Play track",
+    action_analyze_ai: "AI Analysis (Gemini)",
+    action_analyze_sound: "Analyze Audio Clip (15s)",
+    action_edit: "Edit Metadata",
+    action_save: "Save Tags to File",
+    status_saved_label: "SAVED",
+    status_suggested_label: "SUGGESTED",
+    status_untagged_label: "UNTAGGED",
+    status_saving_label: "SAVING...",
+
+    // Empty State
+    empty_title: "No tracks found",
+    empty_desc: "Select a music folder or click 'Scan' to load your library.",
+    empty_scan_now: "Scan Folder Now",
+
+    // Player Bar
+    player_no_track: "No track playing",
+    player_shuffle_tip: "Toggle Shuffle",
+    player_prev_tip: "Previous Track",
+    player_play_tip: "Play / Pause (Space)",
+    player_next_tip: "Next Track",
+    player_repeat_tip: "Toggle Repeat",
+    player_mute_tip: "Mute / Unmute",
+
+    // Settings Modal
+    settings_title: "Audio Tool & AI Settings",
+    settings_lang_label: "Application Language",
+    settings_lang_en: "English (US)",
+    settings_lang_id: "Bahasa Indonesia (ID)",
+    settings_lang_help: "Choose application interface language (English / Indonesia).",
+    settings_api_label: "Google AI Studio Gemini API Key",
+    settings_api_placeholder: "Paste API key here (AIzaSy...)",
+    settings_api_connected: "Connected",
+    settings_api_unconfigured: "API Key not configured!",
+    settings_api_free_link: "Get Free API Key ↗",
+    settings_cascade_title: "AI Model Selection & Fallback Cascade",
+    settings_cascade_help: "Select which models to use. If multiple are selected, the first is primary and subsequent models serve as automatic fallbacks on quota exhaustion. You can also select just one model.",
+    settings_preset_ultrafast: "⚡ Ultra-Fast (3.1-Lite Only)",
+    settings_preset_balanced: "⚖️ Balanced (2.5-Flash + 3.1-Lite)",
+    settings_preset_max: "🧠 Max Quality (3.7 + 2.5 + 3.1)",
+    settings_model_single_notice: "(Single model • No fallback)",
+    settings_model_min_error: "At least one model must be selected!",
+    settings_move_up: "Move up (Higher priority)",
+    settings_move_down: "Move down (Lower priority)",
+    settings_model_primary: "Primary",
+    settings_model_fallback: "Fallback #{n}",
+    settings_separator_label: "Genre Tag Separator in Audio Files",
+    settings_sep_semicolon: "Semicolon ( ; ) — e.g. \"EDM; Techno; Acid Techno\"",
+    settings_sep_slash: "Slash ( / ) — e.g. \"EDM / Techno / Acid Techno\"",
+    settings_sep_comma: "Comma ( , ) — e.g. \"EDM, Techno, Acid Techno\"",
+    settings_tempo_label: "Analyze Tempo & Pace (Slow, Mid-tempo, Fast)",
+    settings_tempo_help: "When disabled, AI skips tempo analysis to conserve tokens and API quota.",
+    settings_custom_label: "Write custom ID3 frames (PARENT_GENRE, SUBGENRE, DECADE, TEMPO)",
+    settings_custom_help: "Compatible with Foobar2000, MusicBee, Rekordbox, and Mp3tag.",
+    settings_close: "Close",
+    settings_save: "Save Settings",
+
+    // Folder Modal
+    folder_modal_title: "Select Music Folder",
+    folder_modal_label: "Music Directory Path on Computer",
+    folder_modal_placeholder: "Example: C:\\Users\\Username\\Music",
+    folder_modal_browse: "Browse...",
+    folder_modal_help: "You can paste the full music folder path from File Explorer or click Browse.",
+    folder_modal_presets: "Quick Presets",
+    folder_modal_preset_test: "Test Folder (tagger test)",
+    folder_modal_preset_music: "Windows Music Folder",
+    folder_modal_clear_prev: "Clear previous tracks before scanning this folder",
+    folder_modal_cancel: "Cancel",
+    folder_modal_scan_now: "Select & Scan Now",
+
+    // Edit Modal
+    edit_modal_title: "Edit Track Tags",
+    edit_title_label: "Track Title",
+    edit_artist_label: "Artist Name",
+    edit_year_label: "Release Year",
+    edit_decade_label: "Decade",
+    edit_parent_label: "Parent Genre",
+    edit_genre_label: "Core Genre",
+    edit_subgenre_label: "Sub-Genre",
+    edit_tempo_label: "Tempo / BPM",
+    edit_tags_label: "All Tags (Comma-separated)",
+    edit_ai_notes: "AI Analysis Notes",
+    edit_cancel: "Cancel",
+    edit_update_suggest: "Update Suggestion",
+    edit_update_file: "Update & Write to File",
+    edit_success_file: "Metadata updated and written to file!",
+    edit_success_suggest: "Metadata suggestion updated!",
+
+    // Batch Progress Modal
+    progress_title_analyzing: "Analyzing with Gemini AI...",
+    progress_desc_analyzing: "Querying Google AI Studio to identify genre, decade, and tempo.",
+    progress_batch_analyzing: "Batch Analyzing Tracks with Gemini AI...",
+    progress_batch_desc: "Processing {n} selected tracks in sequence.",
+    progress_batch_done_title: "Batch Analysis Completed!",
+    progress_batch_done_desc: "Successfully analyzed {done} of {total} tracks.",
+    progress_batch_saving_title: "Writing Tags to Audio Files...",
+    progress_batch_saving_desc: "Writing metadata directly to physical files on disk...",
+    progress_batch_saved_title: "All Files Saved Successfully!",
+    progress_cancel: "Cancel Analysis",
+    progress_cancelled_title: "Analysis Cancelled",
+    progress_cancelled_desc: "Process stopped by user. {done} of {total} tracks were processed.",
+    progress_close: "Close",
+    progress_stat_done: "Done",
+    progress_stat_remaining: "Remaining",
+    progress_stat_elapsed: "Elapsed",
+    progress_stat_runtime: "Run Time",
+    progress_stat_eta: "Est. Left",
+    progress_pacing_active: "15 RPM pacing active (safe & steady)",
+    progress_cooldown_active: "Waiting for next minute quota ({sec}s)...",
+    progress_batch_done_with_runtime: "Successfully analyzed {done} of {total} tracks in {runtime}.",
+    progress_save_analyzed_btn: "Save & Write Analyzed ({n})",
+    progress_stop_and_save_btn: "Stop & Save ({n})",
+    progress_save_all_btn: "Save All to Files ({n})",
+    progress_daily_quota_title: "Gemini Daily Quota Reached",
+    progress_daily_quota_desc: "Daily free-tier quota has been exhausted across active models. {n} songs were successfully analyzed. You can save their tags to audio files now.",
+    toast_batch_analyzed_runtime: "Analysis of {n} tracks completed in {runtime}!",
+
+    // Toasts & Alerts
+    toast_scan_success: "Successfully scanned {n} music files",
+    toast_scan_failed: "Scan failed: {err}",
+    toast_scan_select_folder: "Please select a music folder first",
+    toast_clear_confirm: "Clear displayed track list?\n\n(Audio files on disk will not be deleted)",
+    toast_clear_empty: "Track list is already empty",
+    toast_clear_success: "Track list cleared successfully",
+    toast_analyze_success: "Analysis successful: {parent} → {genre}",
+    toast_analyze_failed: "Analysis failed: {err}",
+    toast_analyze_sound_start: "Analyzing 15-second audio clip...",
+    toast_analyze_sound_success: "Audio clip analysis complete!",
+    toast_analyze_sound_failed: "Audio analysis failed: {err}",
+    toast_save_success: "Tags successfully saved to audio file!",
+    toast_save_failed: "Save failed: {err}",
+    toast_batch_saved_success: "Tags saved to {n} audio files!",
+    toast_batch_all_tagged: "All tracks already have AI tags",
+    toast_settings_saved: "Settings saved successfully!",
+    toast_tempo_enabled: "Tempo analysis enabled",
+    toast_tempo_disabled: "Tempo analysis disabled (saving tokens)",
+    toast_analysis_cancelled: "Track analysis cancelled",
+    toast_search_genre: "🔍 Showing tracks for: \"{genre}\"",
+    toast_filter_cleared: "Search filter cleared",
+    chip_search_tip: "Click to search & show tracks with {genre}",
+
+    // Player Mode & Spotify-style Experience
+    mode_studio: "Studio",
+    mode_player: "Player",
+    mode_studio_tip: "Metadata Editor & AI Studio Mode (Technical)",
+    mode_player_tip: "Spotify-Style Music Player Mode (Distraction-Free)",
+    pm_nav_home: "Home",
+    pm_nav_playlists: "Your Playlists",
+    pm_nav_artists: "Artists",
+    pm_nav_albums: "Albums",
+    pm_nav_decades: "Decades",
+    pm_create_playlist: "Create Playlist",
+    pm_queue_title: "Play Queue",
+    pm_queue_now_playing: "Now Playing",
+    pm_queue_up_next: "Up Next",
+    pm_queue_clear: "Clear Queue",
+    pm_queue_empty: "Queue is empty",
+    pm_quick_picks: "Quick Picks",
+    pm_recently_played: "Recently Played",
+    pm_all_tracks: "All Tracks",
+    pm_explore_genres: "Explore Genres",
+    pm_playlist_created: "Playlist created successfully!",
+    pm_playlist_deleted: "Playlist deleted",
+    pm_track_added_queue: "Added to queue",
+    pm_track_added_playlist: "Added to playlist {name}",
+    pm_track_removed_playlist: "Removed from playlist",
+    pm_play_next: "Play Next",
+    pm_add_to_queue: "Add to Queue",
+    pm_add_to_playlist: "Add to Playlist...",
+    pm_open_in_studio: "Edit Tags in Studio Mode",
+    pm_export_m3u: "Export as .m3u File",
+    pm_new_playlist_modal_title: "Create New Playlist",
+    pm_playlist_name_label: "Playlist Name",
+    pm_playlist_desc_label: "Description",
+    pm_playlist_name_placeholder: "e.g. 90s Vibes, Chill Rap...",
+    pm_playlist_desc_placeholder: "Playlist description (optional)...",
+    pm_btn_create: "Create Playlist",
+    pm_empty_playlist: "This playlist is empty. Click '•••' on any track to add it here!",
+    pm_tracks_count: "{n} tracks",
+    pm_nav_genres: "Genres",
+    pm_nav_tempo: "Tempo & Pace",
+    filter_options_title: "Filter Music Library",
+    filter_decades: "Decade",
+    filter_parent_genre: "Parent Genre",
+    filter_genre: "Genre",
+    filter_subgenre: "Sub-Genre",
+    filter_tempo: "Tempo / Pace",
+    filter_all_decades: "All Decades",
+    filter_all_parents: "All Parent Genres",
+    filter_all_genres: "All Genres",
+    filter_all_subgenres: "All Subgenres",
+    filter_all_tempos: "All Tempos",
+    filter_reset: "Reset Filters",
+    filter_active_n: "Reset ({n})",
+    tempo_slow: "🐢 Slow (~60-90 BPM)",
+    tempo_mid: "🚶 Mid-tempo (~90-120 BPM)",
+    tempo_fast: "⚡ Fast (~120-145 BPM)",
+    tempo_vfast: "🔥 Very Fast (145+ BPM)",
+    pm_genres_title: "Genre Categories",
+    pm_genres_subtitle: "Explore your collection by musical categories and subgenres",
+    pm_tempo_title: "Energy & Tempo",
+    pm_tempo_subtitle: "Pick music to match your mood, workout, or relaxation pace",
+    like_song: "Like Song",
+    unlike_song: "Unlike Song",
+    pm_nav_liked: "Liked Songs",
+    pm_liked_title: "Liked Songs",
+    pm_liked_subtitle: "Your personal collection of favorite tracks marked with love (♥)",
+    pm_liked_empty: "No liked songs yet. Click the heart icon (♥) on any song to save it here!",
+    filter_liked_only: "Liked Only",
+    toast_track_liked: "Track added to Liked Songs (♥)",
+    toast_track_unliked: "Track removed from Liked Songs"
+  }
+};
+
+let currentLanguage = localStorage.getItem("soundscope_language") || localStorage.getItem("sonictag_language") || "en";
+
+function t(key, params = {}) {
+  const langDict = I18N[currentLanguage] || I18N.en;
+  let str = (langDict && langDict[key]) || (I18N.en && I18N.en[key]) || (I18N.id && I18N.id[key]) || key;
+  for (const [k, v] of Object.entries(params)) {
+    str = str.replace(new RegExp(`\\{${k}\\}`, "g"), v);
+  }
+  return str;
+}
+
+function setLanguage(lang) {
+  if (!I18N[lang]) lang = "en";
+  currentLanguage = lang;
+  localStorage.setItem("soundscope_language", lang);
+
+  // Apply to all elements with data-i18n
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (key) {
+      if (el.id === "playerTitle" && window.state && window.state.currentPlayingTrack) {
+        return;
+      }
+      const val = t(key);
+      if (val !== undefined && val !== null) el.textContent = val;
+    }
+  });
+
+  // Apply to all elements with data-i18n-title
+  document.querySelectorAll("[data-i18n-title]").forEach(el => {
+    const key = el.getAttribute("data-i18n-title");
+    if (key) {
+      const val = t(key);
+      if (val !== undefined && val !== null) el.title = val;
+    }
+  });
+
+  // Apply to all elements with data-i18n-placeholder
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+    const key = el.getAttribute("data-i18n-placeholder");
+    if (key) {
+      const val = t(key);
+      if (val !== undefined && val !== null) el.placeholder = val;
+    }
+  });
+
+  // Update HTML lang attribute
+  document.documentElement.lang = lang;
+
+  // Sync settings dropdown if available
+  const langSelect = document.getElementById("settingsLanguage");
+  if (langSelect && langSelect.value !== lang) {
+    langSelect.value = lang;
+  }
+
+  // Dispatch custom event for dynamic tables & rails
+  window.dispatchEvent(new CustomEvent("languageChanged", { detail: { lang } }));
+}
+
+// Auto-run setLanguage on load
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => setLanguage(currentLanguage));
+} else {
+  setLanguage(currentLanguage);
+}
+
+window.I18N = I18N;
+window.t = t;
+window.setLanguage = setLanguage;
+window.getCurrentLanguage = () => currentLanguage;
