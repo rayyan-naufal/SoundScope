@@ -18,46 +18,44 @@ I built this because my local library had thousands of tracks with missing genre
 
 ## Install
 
-Requires Python 3.10+ and an API key from Google AI Studio. If you want audio snippet analysis, make sure `ffmpeg` is installed on your system PATH.
+Requires Node.js 18+ (tested on Node v20) and an optional API key from Google AI Studio. If you want audio snippet analysis, make sure `ffmpeg` is installed on your system PATH.
 
 Clone the repo and install dependencies:
 
 ```bash
 git clone https://github.com/rayyan-naufal/SoundScope.git
 cd SoundScope
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+npm install
 ```
 
-Set up your `.env` file:
+Set up your `.env` file (or configure directly in the app UI):
 
 ```bash
 cp .env.example .env
 ```
 
-Add your Gemini API key (which you cat get free from Google AI Studio):
+Add your Gemini API key (which you can get free from Google AI Studio):
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-You can also paste the key directly into the settings modal inside the app.
-
 ## Usage
 
-Run the desktop app:
+### Run Desktop Window (Lightweight Edge App Container)
+On Windows, simply double-click `run.bat` or run:
 
 ```bash
-python run.py
+npm run app
+# or: node run.js
 ```
 
-On Windows, you can just double-click `run.bat` (or `run_debug.bat` if you want terminal logs visible).
-
-To run it as a regular web app in your browser:
+### Run as Local Web Server
+To run as a web server without launching the desktop window:
 
 ```bash
-uvicorn main:app --host 127.0.0.1 --port 8765 --reload
+npm start
+# or: node server/index.js
 ```
 
 Open `http://127.0.0.1:8765`, pick your music folder, and hit scan. Once indexed, select tracks and click analyze to generate tag suggestions, then save changes to disk.

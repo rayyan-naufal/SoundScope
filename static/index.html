@@ -100,15 +100,23 @@
           <span id="navApiLabel">Checking...</span>
         </div>
 
+        <!-- Minimized Batch Progress Pill -->
+        <div id="minimizedBatchProgress" class="api-status-indicator" style="display:none; cursor:pointer; background:var(--accent-dim); border: 1px solid var(--accent); padding: 4px 8px; border-radius: var(--radius-sm);" data-i18n-title="progress_minimized_bar_tip" title="Click to open batch progress">
+          <svg class="lucide" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1.2s linear infinite;">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+          </svg>
+          <span id="minimizedBatchProgressText" style="font-size: 11px; font-weight: 600; color: var(--accent);">0 / 0</span>
+        </div>
+
         <!-- Library Stats Pill -->
         <div class="nav-stats">
-          <span class="stat-item" title="Total Lagu"><strong id="statTotal">0</strong> <span class="stat-label" data-i18n="stat_tracks">tracks</span></span>
+          <span class="stat-item" data-i18n-title="stat_tracks_tip" title="Total Lagu"><strong id="statTotal">0</strong> <span class="stat-label" data-i18n="stat_tracks">tracks</span></span>
           <span>•</span>
-          <span class="stat-item" title="Belum Ditag"><strong id="statUnprocessed">0</strong> <span class="stat-label" data-i18n="stat_untagged">untagged</span></span>
+          <span class="stat-item" data-i18n-title="stat_untagged_tip" title="Belum Ditag"><strong id="statUnprocessed">0</strong> <span class="stat-label" data-i18n="stat_untagged">untagged</span></span>
           <span>•</span>
-          <span class="stat-item warn" title="Saran AI"><strong id="statAnalyzed">0</strong> <span class="stat-label" data-i18n="stat_suggested">suggested</span></span>
+          <span class="stat-item warn" data-i18n-title="stat_suggested_tip" title="Saran AI"><strong id="statAnalyzed">0</strong> <span class="stat-label" data-i18n="stat_suggested">suggested</span></span>
           <span>•</span>
-          <span class="stat-item ok" title="Tersimpan"><strong id="statSaved">0</strong> <span class="stat-label" data-i18n="stat_saved">saved</span></span>
+          <span class="stat-item ok" data-i18n-title="stat_saved_tip" title="Tersimpan"><strong id="statSaved">0</strong> <span class="stat-label" data-i18n="stat_saved">saved</span></span>
         </div>
 
         <button id="navQueueBtn" class="btn-icon" data-i18n-title="pm_queue_title" title="Antrean Lagu (Queue)">
@@ -162,7 +170,7 @@
           <div class="rail-section">
             <div class="rail-section-header">
               <span data-i18n="rail_decades">Dekade Rilis</span>
-              <button id="resetDecadeBtn" data-i18n="reset" title="Reset filter dekade">Reset</button>
+              <button id="resetDecadeBtn" data-i18n="reset" data-i18n-title="reset_decade_tip" title="Reset filter dekade">Reset</button>
             </div>
             <div class="rail-list" id="decadeRailList">
               <!-- Dynamically populated -->
@@ -173,7 +181,7 @@
           <div class="rail-section">
             <div class="rail-section-header">
               <span data-i18n="rail_parent_genres">Genre Utama</span>
-              <button id="resetGenreBtn" data-i18n="reset" title="Reset filter genre">Reset</button>
+              <button id="resetGenreBtn" data-i18n="reset" data-i18n-title="reset_genre_tip" title="Reset filter genre">Reset</button>
             </div>
             <div class="rail-list" id="parentGenreRailList">
               <!-- Dynamically populated -->
@@ -184,7 +192,7 @@
           <div class="rail-section">
             <div class="rail-section-header">
               <span data-i18n="rail_specific_filters">Filter Spesifik</span>
-              <button id="resetFiltersBtn" data-i18n="reset_all" title="Reset semua filter">Reset All</button>
+              <button id="resetFiltersBtn" data-i18n="reset_all" data-i18n-title="reset_all_tip" title="Reset semua filter">Reset All</button>
             </div>
             <div class="form-group" style="margin-bottom: 6px;">
               <select id="genreFilter" class="form-select">
@@ -619,7 +627,7 @@
           <label class="form-label" for="settingsApiKey" data-i18n="settings_api_label">Google AI Studio Gemini API Key</label>
           <div style="display:flex; gap:6px;">
             <input type="password" id="settingsApiKey" class="form-input mono" data-i18n-placeholder="settings_api_placeholder" placeholder="Tempel API key di sini (AIzaSy...)">
-            <button type="button" id="toggleApiKeyBtn" class="btn-secondary" style="width:36px; padding:0; justify-content:center;" title="Tampilkan/Sembunyikan Key">
+            <button type="button" id="toggleApiKeyBtn" class="btn-secondary" style="width:36px; padding:0; justify-content:center;" data-i18n-title="settings_toggle_key_tip" title="Tampilkan/Sembunyikan Key">
               <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
               </svg>
@@ -731,37 +739,37 @@
         <div class="form-row-2">
           <div class="form-group">
             <label class="form-label" for="editYear" data-i18n="edit_year_label">Tahun Rilis</label>
-            <input type="number" id="editYear" class="form-input mono" placeholder="e.g. 2021">
+            <input type="number" id="editYear" class="form-input mono" data-i18n-placeholder="edit_year_ph" placeholder="e.g. 2021">
           </div>
           <div class="form-group">
             <label class="form-label" for="editDecade" data-i18n="edit_decade_label">Dekade</label>
-            <input type="text" id="editDecade" class="form-input mono" placeholder="e.g. 2020s">
+            <input type="text" id="editDecade" class="form-input mono" data-i18n-placeholder="edit_decade_ph" placeholder="e.g. 2020s">
           </div>
         </div>
 
         <div class="form-row-3">
           <div class="form-group">
             <label class="form-label" for="editParentGenre" data-i18n="edit_parent_label">Parent Genre</label>
-            <input type="text" id="editParentGenre" class="form-input" placeholder="e.g. EDM, Rock">
+            <input type="text" id="editParentGenre" class="form-input" data-i18n-placeholder="edit_parent_ph" placeholder="e.g. EDM, Rock">
           </div>
           <div class="form-group">
             <label class="form-label" for="editGenre" data-i18n="edit_genre_label">Genre Utama</label>
-            <input type="text" id="editGenre" class="form-input" placeholder="e.g. Techno">
+            <input type="text" id="editGenre" class="form-input" data-i18n-placeholder="edit_genre_ph" placeholder="e.g. Techno">
           </div>
           <div class="form-group">
             <label class="form-label" for="editSubGenre" data-i18n="edit_subgenre_label">Sub-Genre</label>
-            <input type="text" id="editSubGenre" class="form-input" placeholder="e.g. Acid Techno">
+            <input type="text" id="editSubGenre" class="form-input" data-i18n-placeholder="edit_subgenre_ph" placeholder="e.g. Acid Techno">
           </div>
         </div>
 
         <div class="form-row-2">
           <div class="form-group">
             <label class="form-label" for="editTempo" data-i18n="edit_tempo_label">Tempo / BPM</label>
-            <input type="text" id="editTempo" class="form-input mono" placeholder="e.g. Fast (~128 BPM), Slow">
+            <input type="text" id="editTempo" class="form-input mono" data-i18n-placeholder="edit_tempo_ph" placeholder="e.g. Fast (~128 BPM), Slow">
           </div>
           <div class="form-group">
             <label class="form-label" for="editTagsInput" data-i18n="edit_tags_label">Semua Tag (Koma)</label>
-            <input type="text" id="editTagsInput" class="form-input" placeholder="2020s, EDM, Techno">
+            <input type="text" id="editTagsInput" class="form-input" data-i18n-placeholder="edit_tags_ph" placeholder="2020s, EDM, Techno">
           </div>
         </div>
 
@@ -786,6 +794,13 @@
   <!-- Batch Progress Modal -->
   <div class="modal-backdrop" id="progressModalBackdrop" style="display:none;">
     <div class="modal-dialog" style="max-width:460px; text-align:center;">
+      <div style="position:absolute; top:12px; right:12px; display:flex; gap:4px;">
+        <button id="minimizeProgressBtn" class="btn-icon" title="Minimize to background" data-i18n-title="progress_minimize_tip">
+          <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>
+          </svg>
+        </button>
+      </div>
       <div class="modal-body" style="padding:28px 20px; align-items:center;">
         <div id="progressModalIcon" style="display:flex; justify-content:center; align-items:center; min-height:40px;">
           <svg class="lucide" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1.2s linear infinite;">

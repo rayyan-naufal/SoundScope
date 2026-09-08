@@ -35,6 +35,20 @@ ENV/
 env.bak/
 venv.bak/
 
+# Node.js Dependencies & Logs
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Test and coverage caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
 # Environment Variables and Secrets (CRITICAL)
 .env
 .env.*

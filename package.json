@@ -1,0 +1,26 @@
+{
+  "name": "soundscope",
+  "version": "2.0.0",
+  "description": "Local AI-powered hierarchical music tagger & explorer",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "app": "node run.js"
+  },
+  "keywords": [
+    "music",
+    "tagger",
+    "audio",
+    "gemini-ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "flac-metadata": "^0.1.1",
+    "music-metadata": "^7.14.0",
+    "node-id3": "^0.2.6",
+    "sqlite3": "^5.1.7"
+  }
+}

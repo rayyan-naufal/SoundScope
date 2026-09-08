@@ -2,6 +2,7 @@
 
 const state = {
   tracks: [],
+  allTracks: [],
   selectedIds: new Set(),
   activeRowIndex: -1,
   taxonomies: {
@@ -363,6 +364,9 @@ const cancelProgressBtn = document.getElementById("cancelProgressBtn");
 const saveAnalyzedAndStopBtn = document.getElementById("saveAnalyzedAndStopBtn");
 const saveAnalyzedBtnText = document.getElementById("saveAnalyzedBtnText");
 const closeProgressBtn = document.getElementById("closeProgressBtn");
+const minimizeProgressBtn = document.getElementById("minimizeProgressBtn");
+const minimizedBatchProgress = document.getElementById("minimizedBatchProgress");
+const minimizedBatchProgressText = document.getElementById("minimizedBatchProgressText");
 const toastContainer = document.getElementById("toastContainer");
 
 function resetSaveAnalyzedButtonUI(labelText = null) {
@@ -493,7 +497,7 @@ function initEventListeners() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ analyze_tempo: isChecked })
         });
-        showToast(isChecked ? "Analisa tempo aktif" : "Analisa tempo dinonaktifkan (hemat token)", "info");
+        showToast(isChecked ? t("toast_tempo_enabled") : t("toast_tempo_disabled"), "info");
       } catch (err) {
         console.error("Error updating tempo setting:", err);
       }
@@ -546,7 +550,7 @@ function initEventListeners() {
           modalFolderInput.value = data.directory;
         }
       } catch (err) {
-        showToast("Gagal membuka folder picker: " + err.message, "error");
+        showToast(t("toast_folder_picker_error", { err: err.message }), "error");
       } finally {
         modalBrowseWindowsBtn.disabled = false;
       }
@@ -558,7 +562,7 @@ function initEventListeners() {
     modalScanNowBtn.addEventListener("click", () => {
       const path = modalFolderInput.value.trim();
       if (!path) {
-        showToast("Masukkan atau pilih path folder musik!", "error");
+        showToast(t("toast_scan_select_folder"), "error");
         return;
       }
       const clearPrev = modalClearPreviousCheckbox ? modalClearPreviousCheckbox.checked : true;
@@ -733,6 +737,11 @@ function initEventListeners() {
     updateSelectionUI();
     checkSettingsStatus();
     renderModelCascadeUI();
+    renderSpotifyPlaylists();
+    renderQueueDrawer();
+    if (state.appMode === "player") {
+      renderPlayerView();
+    }
     if (displayCountText) {
       displayCountText.textContent = t("tracks_count", { n: state.tracks.length });
     }
@@ -746,21 +755,21 @@ function initEventListeners() {
     presetUltraFastBtn.addEventListener("click", () => {
       state.modelCascade = ["gemini-3.1-flash-lite"];
       renderModelCascadeUI();
-      showToast("Preset: Ultra-Fast (3.1-Lite Only)", "info");
+      showToast(t("toast_preset_ultrafast"), "info");
     });
   }
   if (presetBalancedBtn) {
     presetBalancedBtn.addEventListener("click", () => {
       state.modelCascade = ["gemini-2.5-flash", "gemini-3.1-flash-lite"];
       renderModelCascadeUI();
-      showToast("Preset: Balanced (2.5-Flash + 3.1-Lite)", "info");
+      showToast(t("toast_preset_balanced"), "info");
     });
   }
   if (presetMaxQualityBtn) {
     presetMaxQualityBtn.addEventListener("click", () => {
       state.modelCascade = ["gemini-3.7-flash", "gemini-2.5-flash", "gemini-3.1-flash-lite"];
       renderModelCascadeUI();
-      showToast("Preset: Max Quality (3.7 + 2.5 + 3.1)", "info");
+      showToast(t("toast_preset_max"), "info");
     });
   }
 
@@ -780,7 +789,24 @@ function initEventListeners() {
   if (saveEditBtn) saveEditBtn.addEventListener("click", () => saveEditTrack(false));
   if (saveAndWriteFileBtn) saveAndWriteFileBtn.addEventListener("click", () => saveEditTrack(true));
 
-  if (closeProgressBtn) closeProgressBtn.addEventListener("click", () => progressModal.style.display = "none");
+  if (closeProgressBtn) closeProgressBtn.addEventListener("click", () => {
+    progressModal.style.display = "none";
+    if (minimizedBatchProgress) minimizedBatchProgress.style.display = "none";
+  });
+
+  if (minimizeProgressBtn) {
+    minimizeProgressBtn.addEventListener("click", () => {
+      progressModal.style.display = "none";
+      if (minimizedBatchProgress) minimizedBatchProgress.style.display = "flex";
+    });
+  }
+
+  if (minimizedBatchProgress) {
+    minimizedBatchProgress.addEventListener("click", () => {
+      if (progressModal) progressModal.style.display = "flex";
+      minimizedBatchProgress.style.display = "none";
+    });
+  }
 
   if (saveAnalyzedAndStopBtn) {
     saveAnalyzedAndStopBtn.addEventListener("click", () => {
@@ -803,6 +829,7 @@ function initEventListeners() {
         if (batchProgressFill) batchProgressFill.style.background = "var(--warn)";
         cancelProgressBtn.style.display = "none";
         closeProgressBtn.style.display = "inline-flex";
+        if (minimizeProgressBtn) minimizeProgressBtn.style.display = "none";
         if (currentBatchAnalyzedIds.length > 0 && saveAnalyzedAndStopBtn) {
           saveAnalyzedAndStopBtn.style.display = "inline-flex";
           saveAnalyzedAndStopBtn.disabled = false;
@@ -865,15 +892,15 @@ function initAudio() {
       if (state.loopMode === "all") {
         state.loopMode = "one";
         playerLoopBtn.classList.add("active");
-        playerLoopBtn.title = "Repeat: 1 Track";
+        playerLoopBtn.title = t("player_repeat_one");
       } else if (state.loopMode === "one") {
         state.loopMode = "off";
         playerLoopBtn.classList.remove("active");
-        playerLoopBtn.title = "Repeat: Off";
+        playerLoopBtn.title = t("player_repeat_off");
       } else {
         state.loopMode = "all";
         playerLoopBtn.classList.add("active");
-        playerLoopBtn.title = "Repeat: All";
+        playerLoopBtn.title = t("player_repeat_all");
       }
     });
   }
@@ -1030,7 +1057,7 @@ function togglePlayPause() {
 function updatePlayButtonUI() {
   if (playerPlayPauseBtn) {
     playerPlayPauseBtn.innerHTML = state.isPlaying ? ICONS.pause : ICONS.play;
-    playerPlayPauseBtn.title = state.isPlaying ? "Jeda (Space)" : "Putar (Space)";
+    playerPlayPauseBtn.title = state.isPlaying ? t("player_pause_space") : t("player_play_space");
   }
 }
 
@@ -1322,13 +1349,39 @@ async function fetchTracks() {
     const res = await fetch(`/api/tracks?${params.toString()}`);
     const data = await res.json();
     state.tracks = data;
+
+    // Cache complete library when no narrowing filters are active or master list is uninitialized
+    const noFiltersActive = !state.filters.search &&
+      state.filters.decade === "All" &&
+      state.filters.parent_genre === "All" &&
+      state.filters.genre === "All" &&
+      state.filters.sub_genre === "All" &&
+      state.filters.tempo === "All" &&
+      state.filters.is_liked === "All" &&
+      state.filters.status === "All";
+    if (noFiltersActive || !state.allTracks || state.allTracks.length === 0) {
+      state.allTracks = [...data];
+    }
+
     renderTracks();
     renderRailDecades();
     renderRailParentGenres();
     updateSelectionUI();
     if (displayCountText) displayCountText.textContent = t("tracks_count", { n: data.length });
     if (state.appMode === "player") {
-      renderPlayerView(false);
+      if (state.playerView === "all-tracks") {
+        const statsEl = document.getElementById("spDetailStats");
+        const tableContainer = document.getElementById("spAllTracksTableContainer");
+        if (statsEl && tableContainer) {
+          statsEl.innerHTML = `<span>${t("pm_tracks_count", { n: state.tracks.length })}</span><span>•</span><span>${formatTotalDuration(state.tracks)}</span>`;
+          tableContainer.innerHTML = buildTracklistTableHtml(state.tracks, false);
+          updatePlayerFilterDropdowns();
+        } else {
+          renderPlayerView(false);
+        }
+      } else {
+        renderPlayerView(false);
+      }
     }
   } catch (err) {
     console.error("Error fetching tracks:", err);
@@ -1671,9 +1724,10 @@ async function handleClearLibrary() {
   clearLibraryBtn.disabled = true;
   try {
     const res = await fetch("/api/clear", { method: "POST" });
-    if (!res.ok) throw new Error("Gagal mengosongkan library");
+    if (!res.ok) throw new Error(t("toast_clear_library_failed", { err: res.statusText }));
 
     state.tracks = [];
+    state.allTracks = [];
     state.selectedIds.clear();
 
     if (state.audio && !state.audio.paused) {
@@ -1715,7 +1769,7 @@ window.handleAnalyzeSingle = async function(id) {
   progressModalTitle.textContent = t("progress_title_analyzing");
   progressModalDesc.textContent = track ? `${track.artist || '—'} - ${track.title || track.file_name}` : t("progress_desc_analyzing");
   batchProgressFill.style.width = "40%";
-  progressCount.textContent = "1 track";
+  progressCount.textContent = t("progress_count_1_track");
   if (cancelProgressBtn) cancelProgressBtn.style.display = "inline-flex";
   if (closeProgressBtn) closeProgressBtn.style.display = "none";
   progressModal.style.display = "flex";
@@ -1760,9 +1814,9 @@ window.handleAnalyzeSound = async function(id) {
   if (progressModalIcon) progressModalIcon.innerHTML = PROGRESS_ICONS.spinner;
   if (batchProgressFill) batchProgressFill.style.background = "var(--accent)";
   progressModalTitle.textContent = t("toast_analyze_sound_start");
-  progressModalDesc.textContent = track ? `${track.artist || '—'} - ${track.title || track.file_name}` : "Sampling 15s audio clip...";
+  progressModalDesc.textContent = track ? `${track.artist || '—'} - ${track.title || track.file_name}` : t("progress_sampling_sound");
   batchProgressFill.style.width = "50%";
-  progressCount.textContent = "1 audio clip";
+  progressCount.textContent = t("progress_count_1_clip");
   if (cancelProgressBtn) cancelProgressBtn.style.display = "inline-flex";
   if (closeProgressBtn) closeProgressBtn.style.display = "none";
   progressModal.style.display = "flex";
@@ -1858,7 +1912,7 @@ async function directSaveAnalyzedTracks(trackIds) {
     idsToSave = state.tracks.filter(t => t.status === "analyzed").map(t => t.id);
   }
   if (idsToSave.length === 0) {
-    showToast("Tidak ada lagu teranalisis untuk disimpan", "info");
+    showToast(t("toast_no_analyzed_to_save"), "info");
     return;
   }
 
@@ -1971,6 +2025,7 @@ async function handleBatchAnalyzeSelected() {
   if (progressStatusText) progressStatusText.textContent = t("progress_pacing_active");
   if (cancelProgressBtn) cancelProgressBtn.style.display = "inline-flex";
   if (closeProgressBtn) closeProgressBtn.style.display = "none";
+  if (minimizeProgressBtn) minimizeProgressBtn.style.display = "inline-flex";
   if (saveAnalyzedAndStopBtn) {
     saveAnalyzedAndStopBtn.style.display = "none";
     saveAnalyzedAndStopBtn.disabled = false;
@@ -1994,6 +2049,7 @@ async function handleBatchAnalyzeSelected() {
     progressModalTitle.textContent = t("progress_batch_analyzing");
     progressModalDesc.textContent = `[${i + 1}/${total}] Analyzing: ${trackName}`;
     if (progressCount) progressCount.textContent = `${done} / ${total}`;
+    if (minimizedBatchProgressText) minimizedBatchProgressText.textContent = `${done} / ${total}`;
     if (progressRemaining) progressRemaining.textContent = `${remainingCount}`;
     if (progressEta) progressEta.textContent = formatEtaTime(estSeconds);
     if (progressStatusText) progressStatusText.textContent = t("progress_pacing_active");
@@ -2023,7 +2079,7 @@ async function handleBatchAnalyzeSelected() {
             if (batchProgressFill) batchProgressFill.style.background = "var(--warn)";
             progressModalTitle.textContent = t("progress_daily_quota_title");
             progressModalDesc.textContent = t("progress_daily_quota_desc", { n: done });
-            if (progressStatusText) progressStatusText.textContent = "Quota Daily Limit (Free Tier)";
+            if (progressStatusText) progressStatusText.textContent = t("progress_daily_limit_status");
             if (cancelProgressBtn) cancelProgressBtn.style.display = "none";
             if (closeProgressBtn) closeProgressBtn.style.display = "inline-flex";
             if (done > 0 && saveAnalyzedAndStopBtn) {
@@ -2043,7 +2099,7 @@ async function handleBatchAnalyzeSelected() {
           
           if (progressModalIcon) progressModalIcon.innerHTML = PROGRESS_ICONS.spinner;
           if (batchProgressFill) batchProgressFill.style.background = "var(--warn)";
-          progressModalTitle.textContent = "Rate Limit (15 RPM) - Cooldown";
+          progressModalTitle.textContent = t("progress_ratelimit_title");
 
           for (let sec = retryAfterSec; sec > 0; sec--) {
             if (isAnalysisCancelled) break;
@@ -2073,7 +2129,7 @@ async function handleBatchAnalyzeSelected() {
             if (batchProgressFill) batchProgressFill.style.background = "var(--warn)";
             progressModalTitle.textContent = t("progress_daily_quota_title");
             progressModalDesc.textContent = t("progress_daily_quota_desc", { n: done });
-            if (progressStatusText) progressStatusText.textContent = "Quota Daily Limit (Free Tier)";
+            if (progressStatusText) progressStatusText.textContent = t("progress_daily_limit_status");
             if (cancelProgressBtn) cancelProgressBtn.style.display = "none";
             if (closeProgressBtn) closeProgressBtn.style.display = "inline-flex";
             if (done > 0 && saveAnalyzedAndStopBtn) {
@@ -2089,7 +2145,7 @@ async function handleBatchAnalyzeSelected() {
           if (errLower.includes("rate limit") || errLower.includes("resourceexhausted")) {
             console.warn(`[Batch] Rate limit in error message: ${errMsg}. Cooling down...`);
             if (batchProgressFill) batchProgressFill.style.background = "var(--warn)";
-            progressModalTitle.textContent = "Rate Limit (15 RPM) - Cooldown";
+            progressModalTitle.textContent = t("progress_ratelimit_title");
             for (let sec = 15; sec > 0; sec--) {
               if (isAnalysisCancelled) break;
               progressModalDesc.textContent = `Retrying track [${i + 1}/${total}] in ${sec}s...`;
@@ -2117,6 +2173,7 @@ async function handleBatchAnalyzeSelected() {
         const currentRemaining = total - done;
         batchProgressFill.style.width = `${(done / total) * 100}%`;
         if (progressCount) progressCount.textContent = `${done} / ${total}`;
+        if (minimizedBatchProgressText) minimizedBatchProgressText.textContent = `${done} / ${total}`;
         if (progressRemaining) progressRemaining.textContent = `${currentRemaining}`;
         if (progressEta) progressEta.textContent = formatEtaTime(currentRemaining * 4.2);
 
@@ -2150,6 +2207,12 @@ async function handleBatchAnalyzeSelected() {
 
   if (cancelProgressBtn) cancelProgressBtn.style.display = "none";
   if (closeProgressBtn) closeProgressBtn.style.display = "inline-flex";
+  if (minimizeProgressBtn) minimizeProgressBtn.style.display = "none";
+
+  if (minimizedBatchProgress && minimizedBatchProgress.style.display !== "none") {
+    progressModal.style.display = "flex";
+    minimizedBatchProgress.style.display = "none";
+  }
 
   if (isAnalysisCancelled) {
     if (progressModalIcon) progressModalIcon.innerHTML = PROGRESS_ICONS.cancelled;
@@ -2189,7 +2252,7 @@ async function handleBatchAnalyzeSelected() {
       progressElapsed.textContent = formatStopwatch(totalElapsedSec);
       progressElapsed.style.color = "var(--ok)";
     }
-    if (progressStatusText) progressStatusText.textContent = `Selesai • Run Time: ${readableRuntime}`;
+    if (progressStatusText) progressStatusText.textContent = t("progress_stat_done_runtime", { runtime: readableRuntime });
     if (done > 0 && saveAnalyzedAndStopBtn) {
       saveAnalyzedAndStopBtn.style.display = "inline-flex";
       saveAnalyzedAndStopBtn.disabled = false;
@@ -2237,7 +2300,7 @@ async function handleBatchApplySelected() {
   if (progressCount) progressCount.textContent = `0 / ${total}`;
   if (progressRemaining) progressRemaining.textContent = `${total}`;
   if (progressEta) progressEta.textContent = `~${Math.max(1, Math.ceil(total * 0.05))}s`;
-  if (progressStatusText) progressStatusText.textContent = "Menulis frame ID3 & tag audio ke disk...";
+  if (progressStatusText) progressStatusText.textContent = t("progress_writing_disk");
   if (cancelProgressBtn) cancelProgressBtn.style.display = "none";
   if (closeProgressBtn) closeProgressBtn.style.display = "none";
   progressModal.style.display = "flex";
@@ -2291,13 +2354,13 @@ async function handleBatchApplySelected() {
     progressModalDesc.textContent = `${t("toast_batch_saved_success", { n: data.saved_count })} (${readableSaveRuntime})`;
     if (progressCount) progressCount.textContent = `${data.saved_count} / ${total}`;
     if (progressRemaining) progressRemaining.textContent = "0";
-    if (progressEta) progressEta.textContent = "Selesai ✓";
+    if (progressEta) progressEta.textContent = t("progress_eta_done");
     if (progressElapsedLabel) progressElapsedLabel.textContent = t("progress_stat_runtime");
     if (progressElapsed) {
       progressElapsed.textContent = formatStopwatch(saveDurationSec);
       progressElapsed.style.color = "var(--ok)";
     }
-    if (progressStatusText) progressStatusText.textContent = `Tersimpan • Run Time: ${readableSaveRuntime}`;
+    if (progressStatusText) progressStatusText.textContent = t("progress_stat_saved_runtime", { runtime: readableSaveRuntime });
     if (closeProgressBtn) closeProgressBtn.style.display = "inline-flex";
 
     // Update track status in state
@@ -2371,6 +2434,9 @@ async function saveEditTrack(writeToFile) {
       body: JSON.stringify(payload)
     });
 
+    const trkMaster = (state.allTracks || []).find(t => t.id === id);
+    if (trkMaster) Object.assign(trkMaster, payload);
+
     if (writeToFile) {
       const origHtml = saveAndWriteFileBtn.innerHTML;
       saveAndWriteFileBtn.disabled = true;
@@ -2391,7 +2457,7 @@ async function saveEditTrack(writeToFile) {
     await fetchStats();
     await fetchTracks();
   } catch (err) {
-    showToast(`Error update: ${err.message}`, "error");
+    showToast(t("toast_save_failed", { err: err.message }), "error");
   }
 }
 
@@ -2595,7 +2661,7 @@ async function saveSettingsData() {
     settingsModal.style.display = "none";
     await checkSettingsStatus();
   } catch (err) {
-    showToast(`Failed to save settings: ${err.message}`, "error");
+    showToast(t("toast_settings_save_failed", { err: err.message }), "error");
   }
 }
 
@@ -2912,7 +2978,7 @@ function renderQueueUI() {
             <div class="queue-track-name">${escapeHtml(track.title || track.file_name)}</div>
             <div class="queue-track-artist">${escapeHtml(track.artist || "—")}</div>
           </div>
-          <button class="queue-item-remove" onclick="removeFromQueue(${idx})" title="Hapus dari antrean">
+          <button class="queue-item-remove" onclick="removeFromQueue(${idx})" title="${t('pm_queue_remove_tip')}">
             <svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -2958,7 +3024,7 @@ function renderSidebarPlaylists() {
       </div>
       <div style="display:flex; align-items:center; gap:4px;">
         <span class="sp-playlist-item-count">${pl.track_count || 0}</span>
-        <button class="sp-playlist-item-del" onclick="deletePlaylist(${pl.id}, event)" title="Hapus Playlist">
+        <button class="sp-playlist-item-del" onclick="deletePlaylist(${pl.id}, event)" title="${t('pm_playlist_deleted')}">
           <svg class="lucide" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
           </svg>
@@ -2985,7 +3051,7 @@ async function submitCreatePlaylist() {
   const name = newPlaylistNameInput ? newPlaylistNameInput.value.trim() : "";
   const desc = newPlaylistDescInput ? newPlaylistDescInput.value.trim() : "";
   if (!name) {
-    showToast("Nama playlist tidak boleh kosong", "warn");
+    showToast(t("toast_playlist_name_empty"), "warn");
     return;
   }
   try {
@@ -2994,7 +3060,7 @@ async function submitCreatePlaylist() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, description: desc })
     });
-    if (!res.ok) throw new Error("Gagal membuat playlist");
+    if (!res.ok) throw new Error(t("toast_create_playlist_failed", { err: res.statusText }));
     const newPl = await res.json();
     closeCreatePlaylistModal();
     showToast(t("pm_playlist_created"), "ok");
@@ -3007,7 +3073,7 @@ async function submitCreatePlaylist() {
 
 async function deletePlaylist(id, e) {
   if (e) e.stopPropagation();
-  if (!confirm("Hapus playlist ini?")) return;
+  if (!confirm(t("toast_confirm_delete_playlist"))) return;
   try {
     const res = await fetch(`/api/playlists/${id}`, { method: "DELETE" });
     if (res.ok) {
@@ -3044,7 +3110,7 @@ async function addTracksToPlaylist(playlistId, trackIds) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ track_ids: trackIds })
     });
-    if (!res.ok) throw new Error("Gagal menambahkan lagu");
+    if (!res.ok) throw new Error(t("toast_add_track_failed", { err: res.statusText }));
     const pl = state.playlists.find(p => p.id === playlistId);
     const plName = pl ? pl.name : "Playlist";
     showToast(t("pm_track_added_playlist", { name: plName }), "ok");
@@ -3103,6 +3169,17 @@ function hideContextMenu() {
   if (spContextMenu) spContextMenu.style.display = "none";
 }
 
+function handleContextAddToPlaylist(playlistId) {
+  if (!state.contextTrack) return;
+  const trk = state.contextTrack;
+  const pl = state.playlists.find(p => p.id === playlistId);
+  if (pl) {
+    addTracksToPlaylist(playlistId, [trk.id]);
+  } else {
+    showToast(t("toast_playlist_not_found"), "warn");
+  }
+}
+
 function showAddToPlaylistSubmenu(track, e) {
   if (!track) return;
   if (!state.playlists || state.playlists.length === 0) {
@@ -3117,7 +3194,7 @@ function showAddToPlaylistSubmenu(track, e) {
   if (target) {
     addTracksToPlaylist(target.id, [track.id]);
   } else {
-    showToast("Playlist tidak ditemukan", "warn");
+    showToast(t("toast_playlist_not_found"), "warn");
   }
   hideContextMenu();
 }
@@ -3220,7 +3297,7 @@ function renderPlayerHomeView() {
                   <div class="sp-quick-name">${escapeHtml(trk.title || trk.file_name)}</div>
                   <div class="sp-quick-sub">${escapeHtml(trk.artist || "—")}</div>
                 </div>
-                <button class="sp-quick-play-btn" onclick="event.stopPropagation(); playTrackById(${trk.id})" title="Putar">
+                <button class="sp-quick-play-btn" onclick="event.stopPropagation(); playTrackById(${trk.id})" title="${t('action_play_tip')}">
                   ${ICONS.play}
                 </button>
               </div>
@@ -3322,8 +3399,8 @@ function renderPlayerAllTracksView() {
       <div class="sp-detail-info">
         <span class="sp-detail-type">KOLEKSI MUSIK</span>
         <h1 class="sp-detail-title">${t("pm_all_tracks")}</h1>
-        <div class="sp-detail-stats">
-          <span>${tracks.length} lagu</span>
+        <div class="sp-detail-stats" id="spDetailStats">
+          <span>${t("pm_tracks_count", { n: tracks.length })}</span>
           <span>•</span>
           <span>${formatTotalDuration(tracks)}</span>
         </div>
@@ -3347,70 +3424,171 @@ function renderPlayerAllTracksView() {
 
     ${buildFilterBarHtml()}
 
-    ${buildTracklistTableHtml(tracks, false)}
+    <div id="spAllTracksTableContainer">
+      ${buildTracklistTableHtml(tracks, false)}
+    </div>
   `;
 }
 
-function getCurrentFieldCounts(field) {
-  const counts = {};
-  const source = Array.isArray(state.tracks) ? state.tracks : [];
-
-  source.forEach(track => {
-    let value = "";
-    if (field === "decade") value = track.decade || "";
-    else if (field === "parent_genre") value = track.parent_genre || "";
-    else if (field === "genre") value = track.genre || "";
-    else if (field === "sub_genre") value = track.sub_genre || "";
-    else if (field === "tempo") value = track.tempo || "";
-
-    if (!value) return;
-    counts[value] = (counts[value] || 0) + 1;
-  });
-
-  return counts;
+function matchTempo(trackTempo, targetTempo) {
+  if (!trackTempo) return false;
+  const lower = trackTempo.toLowerCase();
+  if (targetTempo === "Very Fast") {
+    return lower.includes("very fast");
+  }
+  if (targetTempo === "Fast") {
+    return lower.includes("fast") && !lower.includes("very fast");
+  }
+  if (targetTempo === "Mid-tempo") {
+    return lower.includes("mid");
+  }
+  if (targetTempo === "Slow") {
+    return lower.includes("slow");
+  }
+  return false;
 }
 
-function buildCountedOptionHtml(value, selectedValue, field, textLabel = null) {
-  const count = getCurrentFieldCounts(field)[value] || 0;
-  const label = textLabel || value;
-  const isSelected = selectedValue === value;
-  return `<option value="${escapeHtml(value)}" ${isSelected ? 'selected' : ''}>${escapeHtml(label)} (${count})</option>`;
+// Compute dynamic cascading taxonomies based on current filters
+function getPlayerFilterOptions() {
+  const all = Array.isArray(state.allTracks) && state.allTracks.length > 0
+    ? state.allTracks
+    : (Array.isArray(state.tracks) ? state.tracks : []);
+
+  // 1. Base tracks respect liked filter
+  const isLikedActive = state.filters.is_liked === "1";
+  let baseTracks = isLikedActive ? all.filter(t => t.is_liked == 1) : all;
+
+  // Also apply text search if user typed in search bar
+  const searchTerm = (state.filters.search || "").trim().toLowerCase();
+  if (searchTerm) {
+    baseTracks = baseTracks.filter(t => {
+      const title = (t.title || "").toLowerCase();
+      const artist = (t.artist || "").toLowerCase();
+      const album = (t.album || "").toLowerCase();
+      const fileName = (t.file_name || "").toLowerCase();
+      const pGenre = (t.parent_genre || "").toLowerCase();
+      const genre = (t.genre || "").toLowerCase();
+      const subGenre = (t.sub_genre || "").toLowerCase();
+      return title.includes(searchTerm) || artist.includes(searchTerm) || album.includes(searchTerm) ||
+        fileName.includes(searchTerm) || pGenre.includes(searchTerm) || genre.includes(searchTerm) || subGenre.includes(searchTerm);
+    });
+  }
+
+  // Decades from base tracks
+  const decadeCounts = {};
+  baseTracks.forEach(t => {
+    if (t.decade) {
+      decadeCounts[t.decade] = (decadeCounts[t.decade] || 0) + 1;
+    }
+  });
+  const availableDecades = Object.keys(decadeCounts).sort((a, b) => b.localeCompare(a));
+  if (state.filters.decade !== "All" && !decadeCounts[state.filters.decade]) {
+    state.filters.decade = "All";
+  }
+
+  // 2. Parent genres from tracks matching selected decade
+  let tracksForParents = baseTracks;
+  if (state.filters.decade && state.filters.decade !== "All") {
+    tracksForParents = tracksForParents.filter(t => t.decade === state.filters.decade);
+  }
+
+  const parentCounts = {};
+  tracksForParents.forEach(t => {
+    if (t.parent_genre) {
+      parentCounts[t.parent_genre] = (parentCounts[t.parent_genre] || 0) + 1;
+    }
+  });
+  // ONLY show parent genres that exist in this selection (count > 0)
+  const availableParents = Object.keys(parentCounts).sort((a, b) => a.localeCompare(b));
+  if (state.filters.parent_genre !== "All" && !parentCounts[state.filters.parent_genre]) {
+    state.filters.parent_genre = "All";
+  }
+
+  // 3. Core genres from tracks matching decade AND parent_genre
+  let tracksForGenres = tracksForParents;
+  if (state.filters.parent_genre && state.filters.parent_genre !== "All") {
+    tracksForGenres = tracksForGenres.filter(t => t.parent_genre === state.filters.parent_genre);
+  }
+
+  const genreCounts = {};
+  tracksForGenres.forEach(t => {
+    if (t.genre) {
+      genreCounts[t.genre] = (genreCounts[t.genre] || 0) + 1;
+    }
+  });
+  // ONLY show genres that exist in this selection (count > 0)
+  const availableGenres = Object.keys(genreCounts).sort((a, b) => a.localeCompare(b));
+  if (state.filters.genre !== "All" && !genreCounts[state.filters.genre]) {
+    state.filters.genre = "All";
+  }
+
+  // 4. Sub-genres from tracks matching decade, parent_genre, AND genre
+  let tracksForSubgenres = tracksForGenres;
+  if (state.filters.genre && state.filters.genre !== "All") {
+    tracksForSubgenres = tracksForSubgenres.filter(t => t.genre === state.filters.genre);
+  }
+
+  const subGenreCounts = {};
+  tracksForSubgenres.forEach(t => {
+    if (t.sub_genre) {
+      subGenreCounts[t.sub_genre] = (subGenreCounts[t.sub_genre] || 0) + 1;
+    }
+  });
+  // ONLY show subgenres that exist in this selection (count > 0)
+  const availableSubGenres = Object.keys(subGenreCounts).sort((a, b) => a.localeCompare(b));
+  if (state.filters.sub_genre !== "All" && !subGenreCounts[state.filters.sub_genre]) {
+    state.filters.sub_genre = "All";
+  }
+
+  // 5. Tempos from tracks matching decade, parent_genre, genre, AND sub_genre
+  let tracksForTempo = tracksForSubgenres;
+  if (state.filters.sub_genre && state.filters.sub_genre !== "All") {
+    tracksForTempo = tracksForTempo.filter(t => t.sub_genre === state.filters.sub_genre);
+  }
+
+  const tempoCounts = { "Slow": 0, "Mid-tempo": 0, "Fast": 0, "Very Fast": 0 };
+  tracksForTempo.forEach(t => {
+    if (!t.tempo) return;
+    if (matchTempo(t.tempo, "Very Fast")) {
+      tempoCounts["Very Fast"]++;
+    } else if (matchTempo(t.tempo, "Mid-tempo")) {
+      tempoCounts["Mid-tempo"]++;
+    } else if (matchTempo(t.tempo, "Slow")) {
+      tempoCounts["Slow"]++;
+    } else if (matchTempo(t.tempo, "Fast")) {
+      tempoCounts["Fast"]++;
+    }
+  });
+
+  // ONLY show tempos that exist in this selection (count > 0)
+  const allTemposOrder = ["Slow", "Mid-tempo", "Fast", "Very Fast"];
+  const availableTempos = allTemposOrder.filter(tmp => tempoCounts[tmp] > 0);
+  if (state.filters.tempo !== "All" && (!tempoCounts[state.filters.tempo] || tempoCounts[state.filters.tempo] === 0)) {
+    state.filters.tempo = "All";
+  }
+
+  return {
+    availableDecades,
+    decadeCounts,
+    availableParents,
+    parentCounts,
+    availableGenres,
+    genreCounts,
+    availableSubGenres,
+    subGenreCounts,
+    availableTempos,
+    tempoCounts,
+    totalBaseCount: baseTracks.length,
+    tracksForParentsCount: tracksForParents.length,
+    tracksForGenresCount: tracksForGenres.length,
+    tracksForSubgenresCount: tracksForSubgenres.length,
+    tracksForTempoCount: tracksForTempo.length
+  };
 }
 
 // Filter Bar in Player Mode
 function buildFilterBarHtml() {
-  const decades = (state.taxonomies.decades && state.taxonomies.decades.length > 0)
-    ? state.taxonomies.decades
-    : ["2020s", "2010s", "2000s", "1990s", "1980s", "1970s", "1960s"];
-
-  const parents = (state.taxonomies.parent_genres && state.taxonomies.parent_genres.length > 0)
-    ? state.taxonomies.parent_genres
-    : ["Blues", "Country", "EDM", "Electronic", "Folk", "Hip Hop", "Latin", "Metal", "Pop", "R&B", "Reggae", "Rock"];
-
-  const decadeCounts = getCurrentFieldCounts("decade");
-  const parentCounts = getCurrentFieldCounts("parent_genre");
-  const genreCounts = getCurrentFieldCounts("genre");
-  const subGenreCounts = getCurrentFieldCounts("sub_genre");
-  const tempoCounts = getCurrentFieldCounts("tempo");
-
-  // Dependent genres list based on selected parent_genre:
-  let genres = state.taxonomies.genres || [];
-  if (state.filters.parent_genre && state.filters.parent_genre !== "All") {
-    genres = (state.taxonomies.parent_to_genres && state.taxonomies.parent_to_genres[state.filters.parent_genre]) || [];
-  }
-
-  // Dependent subgenres list based on selected genre OR parent_genre:
-  let subGenres = state.taxonomies.sub_genres || [];
-  if (state.filters.genre && state.filters.genre !== "All") {
-    const genreSubs = (state.taxonomies.genre_to_subgenres && state.taxonomies.genre_to_subgenres[state.filters.genre]) || [];
-    if (genreSubs.length > 0) {
-      subGenres = genreSubs;
-    } else if (state.filters.parent_genre && state.filters.parent_genre !== "All") {
-      subGenres = (state.taxonomies.parent_to_subgenres && state.taxonomies.parent_to_subgenres[state.filters.parent_genre]) || [];
-    }
-  } else if (state.filters.parent_genre && state.filters.parent_genre !== "All") {
-    subGenres = (state.taxonomies.parent_to_subgenres && state.taxonomies.parent_to_subgenres[state.filters.parent_genre]) || [];
-  }
+  const opts = getPlayerFilterOptions();
 
   let activeFilterCount = 0;
   if (state.filters.decade && state.filters.decade !== "All") activeFilterCount++;
@@ -3421,6 +3599,13 @@ function buildFilterBarHtml() {
   if (state.filters.is_liked && state.filters.is_liked !== "All") activeFilterCount++;
 
   const hasActiveFilters = activeFilterCount > 0;
+
+  const tempoLabels = {
+    "Slow": t("tempo_slow"),
+    "Mid-tempo": t("tempo_mid"),
+    "Fast": t("tempo_fast"),
+    "Very Fast": t("tempo_vfast")
+  };
 
   return `
     <div class="sp-filter-bar" id="spFilterBar">
@@ -3449,8 +3634,8 @@ function buildFilterBarHtml() {
             <span>📅</span> <span>${t("filter_decades")}</span>
           </label>
           <select id="spFilterDecade" class="sp-filter-select ${state.filters.decade !== 'All' ? 'active-filter' : ''}" onchange="handlePlayerFilterSelect('decade', this.value)">
-            <option value="All">${t("filter_all_decades")}</option>
-            ${decades.map(d => `<option value="${escapeHtml(d)}" ${state.filters.decade === d ? 'selected' : ''}>${escapeHtml(d)} (${decadeCounts[d] || 0})</option>`).join("")}
+            <option value="All">${t("filter_all_decades")} (${opts.totalBaseCount})</option>
+            ${opts.availableDecades.map(d => `<option value="${escapeHtml(d)}" ${state.filters.decade === d ? 'selected' : ''}>${escapeHtml(d)} (${opts.decadeCounts[d] || 0})</option>`).join("")}
           </select>
         </div>
 
@@ -3460,30 +3645,30 @@ function buildFilterBarHtml() {
             <span>🏷️</span> <span>${t("filter_parent_genre")}</span>
           </label>
           <select id="spFilterParentGenre" class="sp-filter-select ${state.filters.parent_genre !== 'All' ? 'active-filter' : ''}" onchange="handlePlayerFilterSelect('parent_genre', this.value)">
-            <option value="All">${t("filter_all_parents")}</option>
-            ${parents.map(p => `<option value="${escapeHtml(p)}" ${state.filters.parent_genre === p ? 'selected' : ''}>${escapeHtml(p)} (${parentCounts[p] || 0})</option>`).join("")}
+            <option value="All">${t("filter_all_parents")} (${opts.tracksForParentsCount})</option>
+            ${opts.availableParents.map(p => `<option value="${escapeHtml(p)}" ${state.filters.parent_genre === p ? 'selected' : ''}>${escapeHtml(p)} (${opts.parentCounts[p] || 0})</option>`).join("")}
           </select>
         </div>
 
-        <!-- Core Genre (Dependent on Parent Genre) -->
+        <!-- Core Genre (Dependent on Parent Genre & Decade) -->
         <div class="sp-filter-select-wrap">
           <label class="sp-filter-label" for="spFilterGenre">
             <span>🎸</span> <span>${t("filter_genre")}</span>
           </label>
           <select id="spFilterGenre" class="sp-filter-select ${state.filters.genre !== 'All' ? 'active-filter' : ''}" onchange="handlePlayerFilterSelect('genre', this.value)">
-            <option value="All">${t("filter_all_genres")}</option>
-            ${genres.map(g => `<option value="${escapeHtml(g)}" ${state.filters.genre === g ? 'selected' : ''}>${escapeHtml(g)} (${genreCounts[g] || 0})</option>`).join("")}
+            <option value="All">${t("filter_all_genres")} (${opts.tracksForGenresCount})</option>
+            ${opts.availableGenres.map(g => `<option value="${escapeHtml(g)}" ${state.filters.genre === g ? 'selected' : ''}>${escapeHtml(g)} (${opts.genreCounts[g] || 0})</option>`).join("")}
           </select>
         </div>
 
-        <!-- Sub-Genre (Dependent on Genre and Parent Genre) -->
+        <!-- Sub-Genre (Dependent on Genre, Parent Genre, Decade) -->
         <div class="sp-filter-select-wrap">
           <label class="sp-filter-label" for="spFilterSubGenre">
             <span>🎛️</span> <span>${t("filter_subgenre")}</span>
           </label>
           <select id="spFilterSubGenre" class="sp-filter-select ${state.filters.sub_genre !== 'All' ? 'active-filter' : ''}" onchange="handlePlayerFilterSelect('sub_genre', this.value)">
-            <option value="All">${t("filter_all_subgenres")}</option>
-            ${subGenres.map(sg => `<option value="${escapeHtml(sg)}" ${state.filters.sub_genre === sg ? 'selected' : ''}>${escapeHtml(sg)} (${subGenreCounts[sg] || 0})</option>`).join("")}
+            <option value="All">${t("filter_all_subgenres")} (${opts.tracksForSubgenresCount})</option>
+            ${opts.availableSubGenres.map(sg => `<option value="${escapeHtml(sg)}" ${state.filters.sub_genre === sg ? 'selected' : ''}>${escapeHtml(sg)} (${opts.subGenreCounts[sg] || 0})</option>`).join("")}
           </select>
         </div>
 
@@ -3493,11 +3678,8 @@ function buildFilterBarHtml() {
             <span>⚡</span> <span>${t("filter_tempo")}</span>
           </label>
           <select id="spFilterTempo" class="sp-filter-select ${state.filters.tempo !== 'All' ? 'active-filter' : ''}" onchange="handlePlayerFilterSelect('tempo', this.value)">
-            <option value="All">${t("filter_all_tempos")}</option>
-            <option value="Slow" ${state.filters.tempo === 'Slow' ? 'selected' : ''}>${t("tempo_slow")} (${tempoCounts["Slow"] || 0})</option>
-            <option value="Mid-tempo" ${state.filters.tempo === 'Mid-tempo' ? 'selected' : ''}>${t("tempo_mid")} (${tempoCounts["Mid-tempo"] || 0})</option>
-            <option value="Fast" ${state.filters.tempo === 'Fast' ? 'selected' : ''}>${t("tempo_fast")} (${tempoCounts["Fast"] || 0})</option>
-            <option value="Very Fast" ${state.filters.tempo === 'Very Fast' ? 'selected' : ''}>${t("tempo_vfast")} (${tempoCounts["Very Fast"] || 0})</option>
+            <option value="All">${t("filter_all_tempos")} (${opts.tracksForTempoCount})</option>
+            ${opts.availableTempos.map(tempoKey => `<option value="${tempoKey}" ${state.filters.tempo === tempoKey ? 'selected' : ''}>${escapeHtml(tempoLabels[tempoKey] || tempoKey)} (${opts.tempoCounts[tempoKey] || 0})</option>`).join("")}
           </select>
         </div>
       </div>
@@ -3511,10 +3693,10 @@ function buildFilterBarHtml() {
           <span>${t("filter_liked_only")}</span>
         </button>
         <span class="sp-quick-pills-label">${t("filter_tempo")}:</span>
-        <button type="button" class="sp-pill ${state.filters.tempo === 'Slow' ? 'active' : ''}" onclick="togglePlayerTempoPill('Slow')">🐢 Slow</button>
-        <button type="button" class="sp-pill ${state.filters.tempo === 'Mid-tempo' ? 'active' : ''}" onclick="togglePlayerTempoPill('Mid-tempo')">🚶 Mid-tempo</button>
-        <button type="button" class="sp-pill ${state.filters.tempo === 'Fast' ? 'active' : ''}" onclick="togglePlayerTempoPill('Fast')">⚡ Fast</button>
-        <button type="button" class="sp-pill ${state.filters.tempo === 'Very Fast' ? 'active' : ''}" onclick="togglePlayerTempoPill('Very Fast')">🔥 Very Fast</button>
+        <button type="button" id="spPillTempoSlow" class="sp-pill ${state.filters.tempo === 'Slow' ? 'active' : ''}" onclick="togglePlayerTempoPill('Slow')" style="${opts.tempoCounts['Slow'] > 0 ? '' : 'display:none;'}">🐢 Slow (${opts.tempoCounts['Slow'] || 0})</button>
+        <button type="button" id="spPillTempoMid" class="sp-pill ${state.filters.tempo === 'Mid-tempo' ? 'active' : ''}" onclick="togglePlayerTempoPill('Mid-tempo')" style="${opts.tempoCounts['Mid-tempo'] > 0 ? '' : 'display:none;'}">🚶 Mid-tempo (${opts.tempoCounts['Mid-tempo'] || 0})</button>
+        <button type="button" id="spPillTempoFast" class="sp-pill ${state.filters.tempo === 'Fast' ? 'active' : ''}" onclick="togglePlayerTempoPill('Fast')" style="${opts.tempoCounts['Fast'] > 0 ? '' : 'display:none;'}">⚡ Fast (${opts.tempoCounts['Fast'] || 0})</button>
+        <button type="button" id="spPillTempoVFast" class="sp-pill ${state.filters.tempo === 'Very Fast' ? 'active' : ''}" onclick="togglePlayerTempoPill('Very Fast')" style="${opts.tempoCounts['Very Fast'] > 0 ? '' : 'display:none;'}">🔥 Very Fast (${opts.tempoCounts['Very Fast'] || 0})</button>
       </div>
     </div>
   `;
@@ -3522,107 +3704,126 @@ function buildFilterBarHtml() {
 
 // In-place dropdown updater for smooth instant feedback in Player Mode
 function updatePlayerFilterDropdowns() {
+  const decadeSel = document.getElementById("spFilterDecade");
   const parentSel = document.getElementById("spFilterParentGenre");
   const genreSel = document.getElementById("spFilterGenre");
   const subSel = document.getElementById("spFilterSubGenre");
-  if (!genreSel || !subSel) return;
+  const tempoSel = document.getElementById("spFilterTempo");
+  if (!parentSel || !genreSel || !subSel) return;
 
-  const decadeCounts = getCurrentFieldCounts("decade");
-  const parentCounts = getCurrentFieldCounts("parent_genre");
-  const genreCounts = getCurrentFieldCounts("genre");
-  const subGenreCounts = getCurrentFieldCounts("sub_genre");
+  const opts = getPlayerFilterOptions();
 
-  if (parentSel) {
-    const parents = (state.taxonomies.parent_genres && state.taxonomies.parent_genres.length > 0)
-      ? state.taxonomies.parent_genres
-      : ["Blues", "Country", "EDM", "Electronic", "Folk", "Hip Hop", "Latin", "Metal", "Pop", "R&B", "Reggae", "Rock"];
+  const tempoLabels = {
+    "Slow": t("tempo_slow"),
+    "Mid-tempo": t("tempo_mid"),
+    "Fast": t("tempo_fast"),
+    "Very Fast": t("tempo_vfast")
+  };
 
-    parentSel.innerHTML = `<option value="All">${t("filter_all_parents")}</option>` +
-      parents.map(p => `<option value="${escapeHtml(p)}" ${state.filters.parent_genre === p ? 'selected' : ''}>${escapeHtml(p)} (${parentCounts[p] || 0})</option>`).join("");
-    parentSel.value = state.filters.parent_genre || "All";
-    parentSel.classList.toggle("active-filter", state.filters.parent_genre !== "All");
+  if (decadeSel) {
+    decadeSel.innerHTML = `<option value="All">${t("filter_all_decades")} (${opts.totalBaseCount})</option>` +
+      opts.availableDecades.map(d => `<option value="${escapeHtml(d)}" ${state.filters.decade === d ? 'selected' : ''}>${escapeHtml(d)} (${opts.decadeCounts[d] || 0})</option>`).join("");
+    decadeSel.value = state.filters.decade || "All";
+    decadeSel.classList.toggle("active-filter", state.filters.decade !== "All");
   }
 
-  let genres = state.taxonomies.genres || [];
-  if (state.filters.parent_genre && state.filters.parent_genre !== "All") {
-    genres = (state.taxonomies.parent_to_genres && state.taxonomies.parent_to_genres[state.filters.parent_genre]) || [];
-  }
+  parentSel.innerHTML = `<option value="All">${t("filter_all_parents")} (${opts.tracksForParentsCount})</option>` +
+    opts.availableParents.map(p => `<option value="${escapeHtml(p)}" ${state.filters.parent_genre === p ? 'selected' : ''}>${escapeHtml(p)} (${opts.parentCounts[p] || 0})</option>`).join("");
+  parentSel.value = state.filters.parent_genre || "All";
+  parentSel.classList.toggle("active-filter", state.filters.parent_genre !== "All");
 
-  let subGenres = state.taxonomies.sub_genres || [];
-  if (state.filters.genre && state.filters.genre !== "All") {
-    const genreSubs = (state.taxonomies.genre_to_subgenres && state.taxonomies.genre_to_subgenres[state.filters.genre]) || [];
-    if (genreSubs.length > 0) {
-      subGenres = genreSubs;
-    } else if (state.filters.parent_genre && state.filters.parent_genre !== "All") {
-      subGenres = (state.taxonomies.parent_to_subgenres && state.taxonomies.parent_to_subgenres[state.filters.parent_genre]) || [];
-    }
-  } else if (state.filters.parent_genre && state.filters.parent_genre !== "All") {
-    subGenres = (state.taxonomies.parent_to_subgenres && state.taxonomies.parent_to_subgenres[state.filters.parent_genre]) || [];
-  }
-
-  genreSel.innerHTML = `<option value="All">${t("filter_all_genres")}</option>` +
-    genres.map(g => `<option value="${escapeHtml(g)}" ${state.filters.genre === g ? 'selected' : ''}>${escapeHtml(g)} (${genreCounts[g] || 0})</option>`).join("");
+  genreSel.innerHTML = `<option value="All">${t("filter_all_genres")} (${opts.tracksForGenresCount})</option>` +
+    opts.availableGenres.map(g => `<option value="${escapeHtml(g)}" ${state.filters.genre === g ? 'selected' : ''}>${escapeHtml(g)} (${opts.genreCounts[g] || 0})</option>`).join("");
   genreSel.value = state.filters.genre || "All";
   genreSel.classList.toggle("active-filter", state.filters.genre !== "All");
 
-  subSel.innerHTML = `<option value="All">${t("filter_all_subgenres")}</option>` +
-    subGenres.map(sg => `<option value="${escapeHtml(sg)}" ${state.filters.sub_genre === sg ? 'selected' : ''}>${escapeHtml(sg)} (${subGenreCounts[sg] || 0})</option>`).join("");
+  subSel.innerHTML = `<option value="All">${t("filter_all_subgenres")} (${opts.tracksForSubgenresCount})</option>` +
+    opts.availableSubGenres.map(sg => `<option value="${escapeHtml(sg)}" ${state.filters.sub_genre === sg ? 'selected' : ''}>${escapeHtml(sg)} (${opts.subGenreCounts[sg] || 0})</option>`).join("");
   subSel.value = state.filters.sub_genre || "All";
   subSel.classList.toggle("active-filter", state.filters.sub_genre !== "All");
 
-  const decadeSel = document.getElementById("spFilterDecade");
-  if (decadeSel) {
-    const decades = (state.taxonomies.decades && state.taxonomies.decades.length > 0)
-      ? state.taxonomies.decades
-      : ["2020s", "2010s", "2000s", "1990s", "1980s", "1970s", "1960s"];
-    decadeSel.innerHTML = `<option value="All">${t("filter_all_decades")}</option>` +
-      decades.map(d => `<option value="${escapeHtml(d)}" ${state.filters.decade === d ? 'selected' : ''}>${escapeHtml(d)} (${decadeCounts[d] || 0})</option>`).join("");
-    decadeSel.value = state.filters.decade || "All";
-    decadeSel.classList.toggle("active-filter", state.filters.decade !== "All");
+  if (tempoSel) {
+    tempoSel.innerHTML = `<option value="All">${t("filter_all_tempos")} (${opts.tracksForTempoCount})</option>` +
+      opts.availableTempos.map(tempoKey => `<option value="${tempoKey}" ${state.filters.tempo === tempoKey ? 'selected' : ''}>${escapeHtml(tempoLabels[tempoKey] || tempoKey)} (${opts.tempoCounts[tempoKey] || 0})</option>`).join("");
+    tempoSel.value = state.filters.tempo || "All";
+    tempoSel.classList.toggle("active-filter", state.filters.tempo !== "All");
+  }
+
+  // Quick pills sync
+  const pillSlow = document.getElementById("spPillTempoSlow");
+  const pillMid = document.getElementById("spPillTempoMid");
+  const pillFast = document.getElementById("spPillTempoFast");
+  const pillVFast = document.getElementById("spPillTempoVFast");
+  if (pillSlow) {
+    pillSlow.style.display = opts.tempoCounts["Slow"] > 0 ? "" : "none";
+    pillSlow.classList.toggle("active", state.filters.tempo === "Slow");
+    pillSlow.textContent = `🐢 Slow (${opts.tempoCounts["Slow"] || 0})`;
+  }
+  if (pillMid) {
+    pillMid.style.display = opts.tempoCounts["Mid-tempo"] > 0 ? "" : "none";
+    pillMid.classList.toggle("active", state.filters.tempo === "Mid-tempo");
+    pillMid.textContent = `🚶 Mid-tempo (${opts.tempoCounts["Mid-tempo"] || 0})`;
+  }
+  if (pillFast) {
+    pillFast.style.display = opts.tempoCounts["Fast"] > 0 ? "" : "none";
+    pillFast.classList.toggle("active", state.filters.tempo === "Fast");
+    pillFast.textContent = `⚡ Fast (${opts.tempoCounts["Fast"] || 0})`;
+  }
+  if (pillVFast) {
+    pillVFast.style.display = opts.tempoCounts["Very Fast"] > 0 ? "" : "none";
+    pillVFast.classList.toggle("active", state.filters.tempo === "Very Fast");
+    pillVFast.textContent = `🔥 Very Fast (${opts.tempoCounts["Very Fast"] || 0})`;
+  }
+
+  // Update reset filter button in header
+  let activeFilterCount = 0;
+  if (state.filters.decade && state.filters.decade !== "All") activeFilterCount++;
+  if (state.filters.parent_genre && state.filters.parent_genre !== "All") activeFilterCount++;
+  if (state.filters.genre && state.filters.genre !== "All") activeFilterCount++;
+  if (state.filters.sub_genre && state.filters.sub_genre !== "All") activeFilterCount++;
+  if (state.filters.tempo && state.filters.tempo !== "All") activeFilterCount++;
+  if (state.filters.is_liked && state.filters.is_liked !== "All") activeFilterCount++;
+
+  const filterBar = document.getElementById("spFilterBar");
+  if (filterBar) {
+    const existingResetBtn = filterBar.querySelector(".sp-reset-filter-btn");
+    const filterHeader = filterBar.querySelector(".sp-filter-bar-header");
+    if (activeFilterCount > 0) {
+      if (existingResetBtn) {
+        const spanEl = existingResetBtn.querySelector("span");
+        if (spanEl) spanEl.textContent = t("filter_active_n", { n: activeFilterCount });
+      } else if (filterHeader) {
+        const btnHtml = `
+          <button type="button" class="sp-reset-filter-btn" onclick="resetAllPlayerFilters()" title="${t('filter_reset')}">
+            <svg class="lucide" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+            <span>${t("filter_active_n", { n: activeFilterCount })}</span>
+          </button>
+        `;
+        filterHeader.insertAdjacentHTML("beforeend", btnHtml);
+      }
+    } else if (existingResetBtn) {
+      existingResetBtn.remove();
+    }
   }
 }
 
 window.handlePlayerFilterSelect = function(field, value) {
-  if (state.appMode === "player" && state.activePlayerView !== "all-tracks") {
-    state.activePlayerView = "all-tracks";
-    updatePlayerNavActive("all-tracks");
+  if (state.appMode === "player" && state.playerView !== "all-tracks") {
+    state.playerView = "all-tracks";
+    updatePlayerNavActive();
   }
 
   state.filters[field] = value;
 
-  // Cascading validation: reset child filters if they are no longer related to the newly selected parent/genre
-  if (field === "parent_genre") {
-    if (value !== "All") {
-      const allowedGenres = (state.taxonomies.parent_to_genres && state.taxonomies.parent_to_genres[value]) || [];
-      if (state.filters.genre !== "All" && !allowedGenres.includes(state.filters.genre)) {
-        state.filters.genre = "All";
-      }
-      const allowedSubgenres = (state.taxonomies.parent_to_subgenres && state.taxonomies.parent_to_subgenres[value]) || [];
-      if (state.filters.sub_genre !== "All" && !allowedSubgenres.includes(state.filters.sub_genre)) {
-        state.filters.sub_genre = "All";
-      }
-    }
-  } else if (field === "genre") {
-    if (value !== "All") {
-      if (state.filters.parent_genre === "All" && state.taxonomies.parent_to_genres) {
-        for (const [p, gList] of Object.entries(state.taxonomies.parent_to_genres)) {
-          if (gList.includes(value)) {
-            state.filters.parent_genre = p;
-            break;
-          }
-        }
-      }
-      const allowedSubgenres = (state.taxonomies.genre_to_subgenres && state.taxonomies.genre_to_subgenres[value]) || [];
-      if (allowedSubgenres.length > 0 && state.filters.sub_genre !== "All" && !allowedSubgenres.includes(state.filters.sub_genre)) {
-        state.filters.sub_genre = "All";
-      }
-    }
-  }
+  // Immediate dynamic in-place update of dropdowns and options
+  updatePlayerFilterDropdowns();
 
   if (genreFilter && state.filters.genre) genreFilter.value = state.filters.genre;
   if (subGenreFilter && state.filters.sub_genre) subGenreFilter.value = state.filters.sub_genre;
 
-  updatePlayerFilterDropdowns();
   fetchTracks();
 };
 
@@ -3632,6 +3833,7 @@ window.togglePlayerTempoPill = function(tempoVal) {
   } else {
     state.filters.tempo = tempoVal;
   }
+  updatePlayerFilterDropdowns();
   fetchTracks();
 };
 
@@ -3641,6 +3843,7 @@ window.togglePlayerLikedPill = function() {
   } else {
     state.filters.is_liked = "1";
   }
+  updatePlayerFilterDropdowns();
   fetchTracks();
 };
 
@@ -4079,7 +4282,7 @@ function buildTrackRowHtml(track, idx) {
       icon = "🐢";
       filterVal = "Slow";
     }
-    tempoBadge = `<span class="sp-tempo-badge ${badgeClass}" onclick="event.stopPropagation(); togglePlayerTempoPill('${filterVal}')" title="Filter tempo: ${filterVal}">${icon} ${escapeHtml(track.tempo)}</span>`;
+    tempoBadge = `<span class="sp-tempo-badge ${badgeClass}" onclick="event.stopPropagation(); togglePlayerTempoPill('${filterVal}')" title="${t('filter_tempo')}: ${filterVal}">${icon} ${escapeHtml(track.tempo)}</span>`;
   }
 
   const parentBadge = track.parent_genre
@@ -4127,7 +4330,7 @@ function buildTrackRowHtml(track, idx) {
         </button>
       </td>
       <td class="sp-track-more-cell" onclick="event.stopPropagation();">
-        <button class="sp-track-more-btn" onclick="handleTrackMoreClick(event, ${track.id})" title="Pilihan Lagu (•••)">
+        <button class="sp-track-more-btn" onclick="handleTrackMoreClick(event, ${track.id})" title="${t('pm_track_options_tip')}">
           <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
           </svg>
@@ -4317,6 +4520,8 @@ window.toggleTrackLike = async function(trackId, e) {
 
   // Optimistic UI updates
   if (track) track.is_liked = newVal;
+  const trackMaster = (state.allTracks || []).find(t => t.id === trackId);
+  if (trackMaster) trackMaster.is_liked = newVal;
   if (state.currentPlayingTrack && state.currentPlayingTrack.id === trackId) {
     state.currentPlayingTrack.is_liked = newVal;
     updatePlayerLikeBtnUI(state.currentPlayingTrack);
@@ -4342,6 +4547,7 @@ window.toggleTrackLike = async function(trackId, e) {
     if (res.ok) {
       const data = await res.json();
       if (track) track.is_liked = data.is_liked;
+      if (trackMaster) trackMaster.is_liked = data.is_liked;
       showToast(newVal === 1 ? t("toast_track_liked") : t("toast_track_unliked"), "info");
       fetchTaxonomies();
       if (state.playerView === "liked") {
@@ -4349,17 +4555,19 @@ window.toggleTrackLike = async function(trackId, e) {
       }
     } else {
       if (track) track.is_liked = oldVal;
+      if (trackMaster) trackMaster.is_liked = oldVal;
     }
   } catch (err) {
     console.error("Failed to toggle track like:", err);
     if (track) track.is_liked = oldVal;
+    if (trackMaster) trackMaster.is_liked = oldVal;
   }
 };
 
 // --- Liked Tracks Detail View ---
 function renderLikedTracksView() {
   if (!spContentScroll) return;
-  const likedTracks = state.tracks.filter(t => t.is_liked == 1);
+  const likedTracks = (state.allTracks && state.allTracks.length > 0 ? state.allTracks : state.tracks).filter(t => t.is_liked == 1);
 
   spContentScroll.innerHTML = `
     <div class="sp-detail-header">
@@ -4373,7 +4581,7 @@ function renderLikedTracksView() {
         <h1 class="sp-detail-title" data-i18n="pm_liked_title">${t("pm_liked_title")}</h1>
         <p class="sp-detail-desc" data-i18n="pm_liked_subtitle">${t("pm_liked_subtitle")}</p>
         <div class="sp-detail-stats">
-          <span>${likedTracks.length} lagu</span>
+          <span>${t("pm_tracks_count", { n: likedTracks.length })}</span>
           <span>•</span>
           <span>${formatTotalDuration(likedTracks)}</span>
         </div>
