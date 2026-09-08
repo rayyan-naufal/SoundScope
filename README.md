@@ -78,8 +78,8 @@ Tags are written directly into your audio files (ID3v2.3 / ID3v2.4 / Vorbis / MP
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/soundscope.git
-cd soundscope
+git clone https://github.com/rayyan-naufal/SoundScope.git
+cd SoundScope
 ```
 
 ### 2. Create a Virtual Environment (Recommended)
