@@ -72,7 +72,8 @@ if __name__ == "__main__":
         min_size=(900, 600),
         text_select=True,
     )
-    webview.start()
+    icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
+    webview.start(icon=icon_path if os.path.exists(icon_path) else None)
 
     # When the window is closed, the daemon server thread terminates automatically
     print("\nSoundScope window closed. Goodbye!")

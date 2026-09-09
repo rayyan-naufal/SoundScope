@@ -5,7 +5,10 @@
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
-    "app": "node run.js"
+    "app": "node run.js",
+    "launch": "wscript //nologo SoundScope.vbs",
+    "setup-shortcut": "cscript //nologo scripts/setup_shortcut.vbs",
+    "generate-icons": "python scripts/generate_icons.py"
   },
   "keywords": [
     "music",

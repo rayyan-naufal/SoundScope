@@ -33,6 +33,8 @@ const DEFAULT_SETTINGS = {
   write_custom_frames: true,
   write_standard_genre: true,
   analyze_tempo: true,
+  audio_gain_normalization: true,
+  default_app_mode: "player",
   language: "en",
   port: 8765
 };

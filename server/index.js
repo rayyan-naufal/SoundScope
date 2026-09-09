@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const { exec, spawn } = require('child_process');
 
 const {
@@ -35,7 +36,8 @@ const {
 const {
   scanDirectory,
   extractCoverBytes,
-  invalidateCoverCache
+  invalidateCoverCache,
+  clearCoverCache
 } = require('./tag_reader');
 
 const { writeTagsToFile } = require('./tag_writer');
@@ -106,6 +108,7 @@ app.get('/api/taxonomies', async (req, res) => {
 // Clear library
 app.post('/api/clear', async (req, res) => {
   try {
+    clearCoverCache();
     await clearAllTracks();
     res.json({
       status: "success",
@@ -182,6 +185,7 @@ app.post('/api/scan', async (req, res) => {
     }
 
     if (req.body.clear_previous) {
+      clearCoverCache();
       await clearAllTracks();
     }
 
@@ -500,10 +504,16 @@ app.get('/api/cover/:track_id', async (req, res) => {
       return res.status(404).json({ detail: "No cover art found" });
     }
 
+    // Content-based ETag using MD5 hash of cover bytes
+    const etag = `"${crypto.createHash('md5').update(cover.data).digest('hex').substring(0, 16)}"`;
+    if (req.headers['if-none-match'] === etag) {
+      return res.status(304).end();
+    }
+
     res.set({
       "Content-Type": cover.mime,
-      "Cache-Control": "public, max-age=604800, immutable",
-      "ETag": `"${trackId}"`
+      "Cache-Control": req.query.v ? "public, max-age=86400, immutable" : "public, max-age=3600, must-revalidate",
+      "ETag": etag
     });
     return res.send(cover.data);
   } catch (err) {

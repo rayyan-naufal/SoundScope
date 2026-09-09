@@ -6,6 +6,14 @@
   <title>SoundScope — Professional Music Tagger & Explorer</title>
   <meta name="description" content="Utilitarian hierarchical music tagger using Google AI Studio. Calm, dense, professional audio tool aesthetic.">
   
+  <!-- Favicon & Icons -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icon-16x16.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="/icon-192x192.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#101114">
+  
   <!-- Inter & JetBrains Mono Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +22,7 @@
   <link rel="stylesheet" href="styles.css?v=4.2">
 </head>
 <body>
-  <div class="app-container">
+  <div class="app-container mode-player">
     <!-- Top Navigation Bar (48px fixed) -->
     <header class="navbar">
       <div class="nav-left">
@@ -25,11 +33,13 @@
           </svg>
         </button>
 
+        <!-- Brand Identity -->
         <div class="brand">
           <div class="brand-icon">
-            <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <circle cx="12" cy="12" r="2"/>
+            <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18V5l12-2v13"/>
+              <circle cx="6" cy="18" r="3"/>
+              <circle cx="18" cy="16" r="3"/>
             </svg>
           </div>
           <span class="brand-title">SoundScope</span>
@@ -38,13 +48,13 @@
 
         <!-- Mode Switcher Pill: Studio vs Player -->
         <div class="mode-switch-pill" id="modeSwitchPill">
-          <button type="button" class="mode-btn active" id="modeStudioBtn" data-mode="studio" data-i18n-title="mode_studio_tip" title="Mode Editor Tag & Analisa AI (Teknis)">
+          <button type="button" class="mode-btn" id="modeStudioBtn" data-mode="studio" data-i18n-title="mode_studio_tip" title="Mode Editor Tag & Analisa AI (Teknis)">
             <svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
             </svg>
             <span data-i18n="mode_studio">Studio</span>
           </button>
-          <button type="button" class="mode-btn" id="modePlayerBtn" data-mode="player" data-i18n-title="mode_player_tip" title="Mode Pemutar Santai Spotify (Bebas Distraksi)">
+          <button type="button" class="mode-btn active" id="modePlayerBtn" data-mode="player" data-i18n-title="mode_player_tip" title="Mode Pemutar Santai Spotify (Bebas Distraksi)">
             <svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
             </svg>
@@ -137,7 +147,7 @@
     </header>
 
     <!-- Main Workspace (Studio Mode) -->
-    <div class="studio-workspace" id="studioModeView">
+    <div class="studio-workspace" id="studioModeView" style="display:none;">
       <!-- Left Filter Rail (240px dense utilitarian) -->
       <aside class="studio-sidebar" id="studioSidebar">
         <div class="sidebar-content">
@@ -355,7 +365,7 @@
     </div>
 
     <!-- Spotify-Style Music Listening Workspace (Player Mode) -->
-    <div class="player-mode-workspace" id="playerModeView" style="display:none;">
+    <div class="player-mode-workspace" id="playerModeView" style="display:flex;">
       <!-- Spotify Left Sidebar (240px) -->
       <aside class="spotify-sidebar" id="spotifySidebar">
         <div class="sp-nav-section">
@@ -704,6 +714,30 @@
           </label>
           <span class="form-help" style="padding-left:24px;" data-i18n="settings_custom_help">Kompatibel dengan Foobar2000, MusicBee, Rekordbox, dan Mp3tag.</span>
         </div>
+
+        <!-- Audio Gain Normalization Toggle -->
+        <div class="form-group">
+          <label class="checkbox-custom">
+            <input type="checkbox" id="settingsGainNormalization" checked>
+            <span class="checkbox-box">
+              <svg class="lucide" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </span>
+            <span class="checkbox-label" data-i18n="settings_norm_label">Normalisasi Gain Audio (Volume Konsisten)</span>
+          </label>
+          <span class="form-help" style="padding-left:24px;" data-i18n="settings_norm_help">Menyamakan level kenyaringan lagu secara otomatis pada lagu dengan mastering berbeda dan mencegah distorsi audio clipping.</span>
+        </div>
+
+        <!-- Default App Startup Mode -->
+        <div class="form-group">
+          <label class="form-label" for="settingsDefaultAppMode" data-i18n="settings_default_mode_label">Mode Default Saat Dibuka</label>
+          <select id="settingsDefaultAppMode" class="form-select">
+            <option value="player" data-i18n="settings_mode_player">Mode Player (Spotify-Style)</option>
+            <option value="studio" data-i18n="settings_mode_studio">Mode Studio (Tagger & AI)</option>
+          </select>
+          <span class="form-help" data-i18n="settings_default_mode_help">Pilih tampilan utama yang dibuka saat aplikasi pertama kali dijalankan.</span>
+        </div>
       </div>
       <div class="modal-footer">
         <button id="cancelSettingsBtn" class="btn-secondary" data-i18n="settings_close">Tutup</button>
@@ -793,7 +827,7 @@
 
   <!-- Batch Progress Modal -->
   <div class="modal-backdrop" id="progressModalBackdrop" style="display:none;">
-    <div class="modal-dialog" style="max-width:460px; text-align:center;">
+    <div class="modal-dialog" style="max-width:460px; text-align:center; position:relative;">
       <div style="position:absolute; top:12px; right:12px; display:flex; gap:4px;">
         <button id="minimizeProgressBtn" class="btn-icon" title="Minimize to background" data-i18n-title="progress_minimize_tip">
           <svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">

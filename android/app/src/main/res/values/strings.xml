@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">SoundScope (1)</string>
+    <string name="playback_channel_name">Music Playback</string>
+    <string name="playback_channel_description">Notification controls for SoundScope audio playback</string>
+</resources>

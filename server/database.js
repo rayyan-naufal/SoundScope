@@ -246,15 +246,30 @@ async function upsertScannedTrack(trackDict) {
   }
 }
 
-async function getTrack(trackId) {
-  const row = await get("SELECT * FROM tracks WHERE id = ?", [trackId]);
+function formatTrack(row) {
   if (!row) return null;
   try {
-    row.tags = JSON.parse(row.tags || "[]");
+    row.tags = typeof row.tags === 'string' ? JSON.parse(row.tags || "[]") : (row.tags || []);
   } catch (_) {
     row.tags = [];
   }
+  if (row.has_cover) {
+    const rawKey = `${row.file_path || ''}_${row.file_size || 0}_${row.updated_at || ''}`;
+    let hash = 0;
+    for (let i = 0; i < rawKey.length; i++) {
+      hash = ((hash << 5) - hash) + rawKey.charCodeAt(i);
+      hash |= 0;
+    }
+    row.cover_v = Math.abs(hash).toString(36);
+  } else {
+    row.cover_v = null;
+  }
   return row;
+}
+
+async function getTrack(trackId) {
+  const row = await get("SELECT * FROM tracks WHERE id = ?", [trackId]);
+  return formatTrack(row);
 }
 
 async function updateTrackAiTags(trackId, tagsData, status = "analyzed") {
@@ -403,14 +418,7 @@ async function queryTracks({
   const sql = `SELECT * FROM tracks ${whereClause} ORDER BY ${orderClause}`;
   const rows = await all(sql, params);
 
-  return rows.map(r => {
-    try {
-      r.tags = JSON.parse(r.tags || "[]");
-    } catch (_) {
-      r.tags = [];
-    }
-    return r;
-  });
+  return rows.map(r => formatTrack(r));
 }
 
 async function getTaxonomies() {
@@ -588,14 +596,7 @@ async function getPlaylist(playlistId) {
     ORDER BY pt.position ASC, pt.added_at ASC
   `, [playlistId]);
 
-  const tracks = trackRows.map(r => {
-    try {
-      r.tags = JSON.parse(r.tags || "[]");
-    } catch (_) {
-      r.tags = [];
-    }
-    return r;
-  });
+  const tracks = trackRows.map(r => formatTrack(r));
 
   return {
     ...pRow,

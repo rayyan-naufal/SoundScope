@@ -36,7 +36,9 @@ const state = {
   audio: null,
   currentMusicDir: "",
   modelCascade: ["gemini-3.1-flash-lite", "gemini-2.5-flash", "gemini-3.7-flash"],
-  appMode: localStorage.getItem("soundscope_app_mode") || localStorage.getItem("sonictag_app_mode") || "studio",
+  appMode: "player",
+  defaultAppMode: "player",
+  gainNormalization: true,
   playerView: "home",
   activePlaylistId: null,
   activeFilterValue: null,
@@ -247,6 +249,8 @@ const apiKeyStatus = document.getElementById("apiKeyStatus");
 const settingsSeparator = document.getElementById("settingsSeparator");
 const settingsWriteCustom = document.getElementById("settingsWriteCustom");
 const settingsAnalyzeTempo = document.getElementById("settingsAnalyzeTempo");
+const settingsGainNormalization = document.getElementById("settingsGainNormalization");
+const settingsDefaultAppMode = document.getElementById("settingsDefaultAppMode");
 const editTempo = document.getElementById("editTempo");
 const toggleApiKeyBtn = document.getElementById("toggleApiKeyBtn");
 const cascadeFlowPreview = document.getElementById("cascadeFlowPreview");
@@ -808,6 +812,16 @@ function initEventListeners() {
     });
   }
 
+  if (progressModal) {
+    progressModal.addEventListener("click", (e) => {
+      if (e.target === progressModal) {
+        if (minimizeProgressBtn && minimizeProgressBtn.style.display !== "none") {
+          minimizeProgressBtn.click();
+        }
+      }
+    });
+  }
+
   if (saveAnalyzedAndStopBtn) {
     saveAnalyzedAndStopBtn.addEventListener("click", () => {
       directSaveAnalyzedTracks(currentBatchAnalyzedIds);
@@ -871,9 +885,157 @@ function updateVolumeSliderFill(vol = 0.8) {
   playerVolumeBar.style.background = `linear-gradient(to right, #06b6d4 0%, #06b6d4 ${p}%, var(--border) ${p}%, var(--border) 100%)`;
 }
 
+// --- Audio Gain Normalization & Web Audio Pipeline ---
+let audioCtx = null;
+let mediaSourceNode = null;
+let normAnalyserNode = null;
+let normGainNode = null;
+let limiterNode = null;
+let masterGainNode = null;
+let normRafId = null;
+const TARGET_LOUDNESS_DB = -14.0;   // Reference streaming loudness target (-14 dBFS)
+const SILENCE_THRESHOLD_DB = -48.0; // Silence floor gate
+const MIN_GAIN_DB = -10.0;          // Maximum cut for super loud masters
+const MAX_GAIN_DB = 8.0;            // Maximum boost for very quiet masters
+let currentLoudnessDb = TARGET_LOUDNESS_DB;
+const normDataBuffer = new Float32Array(2048);
+
+function setupWebAudioPipeline() {
+  if (audioCtx) return true;
+  try {
+    const AudioCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtor || !nativeAudio) return false;
+
+    audioCtx = new AudioCtor();
+
+    // 1. MediaElementSource from nativeAudio element (created once)
+    mediaSourceNode = audioCtx.createMediaElementSource(nativeAudio);
+
+    // 2. Feedforward AnalyserNode to evaluate raw audio track master loudness
+    normAnalyserNode = audioCtx.createAnalyser();
+    normAnalyserNode.fftSize = 2048;
+    normAnalyserNode.smoothingTimeConstant = 0.3;
+
+    // 3. Normalization GainNode
+    normGainNode = audioCtx.createGain();
+    normGainNode.gain.setValueAtTime(1.0, audioCtx.currentTime);
+
+    // 4. Brickwall Peak Limiter (DynamicsCompressorNode)
+    // Threshold -1.0 dBFS, Ratio 20:1, 2ms attack, 80ms release to strictly prevent clipping
+    limiterNode = audioCtx.createDynamicsCompressor();
+    limiterNode.threshold.setValueAtTime(-1.0, audioCtx.currentTime);
+    limiterNode.knee.setValueAtTime(2.0, audioCtx.currentTime);
+    limiterNode.ratio.setValueAtTime(20.0, audioCtx.currentTime);
+    limiterNode.attack.setValueAtTime(0.002, audioCtx.currentTime);
+    limiterNode.release.setValueAtTime(0.08, audioCtx.currentTime);
+
+    // 5. Master GainNode for user volume slider & mute
+    masterGainNode = audioCtx.createGain();
+    const initialVol = playerVolumeBar && playerVolumeBar.value ? parseFloat(playerVolumeBar.value) : 0.8;
+    masterGainNode.gain.setValueAtTime(initialVol, audioCtx.currentTime);
+
+    // Connect audio graph
+    mediaSourceNode.connect(normAnalyserNode);
+    mediaSourceNode.connect(normGainNode);
+    normGainNode.connect(limiterNode);
+    limiterNode.connect(masterGainNode);
+    masterGainNode.connect(audioCtx.destination);
+
+    startNormalizationLoop();
+    return true;
+  } catch (err) {
+    console.warn("[SoundScope] Web Audio normalization pipeline init:", err);
+    return false;
+  }
+}
+
+function updateNormalization() {
+  if (!state.isPlaying || !normAnalyserNode || !normGainNode || !limiterNode || !audioCtx) {
+    return;
+  }
+
+  if (!state.gainNormalization) {
+    // Normalization disabled: transparent pass-through
+    normGainNode.gain.setTargetAtTime(1.0, audioCtx.currentTime, 0.05);
+    limiterNode.threshold.setTargetAtTime(0.0, audioCtx.currentTime, 0.05);
+    limiterNode.ratio.setTargetAtTime(1.0, audioCtx.currentTime, 0.05);
+    return;
+  }
+
+  // Ensure limiter is active
+  limiterNode.threshold.setTargetAtTime(-1.0, audioCtx.currentTime, 0.05);
+  limiterNode.ratio.setTargetAtTime(20.0, audioCtx.currentTime, 0.05);
+
+  normAnalyserNode.getFloatTimeDomainData(normDataBuffer);
+
+  let sumSquares = 0;
+  const len = normDataBuffer.length;
+  for (let i = 0; i < len; i++) {
+    const s = normDataBuffer[i];
+    sumSquares += s * s;
+  }
+  const rms = Math.sqrt(sumSquares / len);
+  const sampleDb = 20 * Math.log10(rms + 1e-6);
+
+  // Silence gate: Ignore pauses, track intros/outros below -48 dBFS
+  if (sampleDb >= SILENCE_THRESHOLD_DB) {
+    // Asymmetric smoothing: fast attack (~300ms) on loud parts, slow release (~2.5s) on soft parts
+    const alpha = sampleDb > currentLoudnessDb ? 0.06 : 0.012;
+    currentLoudnessDb = currentLoudnessDb + alpha * (sampleDb - currentLoudnessDb);
+  }
+
+  // Calculate required gain adjustment towards target loudness
+  const diffDb = TARGET_LOUDNESS_DB - currentLoudnessDb;
+  const clampedDb = Math.max(MIN_GAIN_DB, Math.min(MAX_GAIN_DB, diffDb));
+  const targetGain = Math.pow(10, clampedDb / 20);
+
+  normGainNode.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.12);
+}
+
+function startNormalizationLoop() {
+  if (normRafId) cancelAnimationFrame(normRafId);
+  function loop() {
+    updateNormalization();
+    normRafId = requestAnimationFrame(loop);
+  }
+  normRafId = requestAnimationFrame(loop);
+}
+
+function resetNormalizationForNewTrack() {
+  currentLoudnessDb = TARGET_LOUDNESS_DB;
+  if (normGainNode && audioCtx) {
+    normGainNode.gain.setValueAtTime(1.0, audioCtx.currentTime);
+  }
+}
+
+function setPlayerVolume(vol) {
+  state.audio.volume = vol;
+  if (masterGainNode && audioCtx) {
+    masterGainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+  }
+}
+
+function setPlayerMuted(isMuted) {
+  state.isMuted = isMuted;
+  if (isMuted) {
+    state.previousVolume = playerVolumeBar && playerVolumeBar.value ? parseFloat(playerVolumeBar.value) : 0.8;
+    state.audio.volume = 0;
+    if (masterGainNode && audioCtx) {
+      masterGainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+    }
+  } else {
+    const vol = state.previousVolume || 0.8;
+    state.audio.volume = vol;
+    if (masterGainNode && audioCtx) {
+      masterGainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+    }
+  }
+}
+
 // --- Audio Player Logic ---
 function initAudio() {
   state.audio = nativeAudio;
+  setupWebAudioPipeline();
 
   if (playerPlayPauseBtn) playerPlayPauseBtn.addEventListener("click", togglePlayPause);
   if (playerPrevBtn) playerPrevBtn.addEventListener("click", playPrevTrack);
@@ -908,27 +1070,25 @@ function initAudio() {
   if (playerMuteBtn) {
     playerMuteBtn.addEventListener("click", () => {
       if (state.isMuted) {
-        state.audio.volume = state.previousVolume;
+        setPlayerMuted(false);
         playerVolumeBar.value = state.previousVolume;
         updateVolumeSliderFill(state.previousVolume);
-        state.isMuted = false;
         volIconSvg.outerHTML = ICONS.volume2;
       } else {
-        state.previousVolume = state.audio.volume;
-        state.audio.volume = 0;
+        setPlayerMuted(true);
         playerVolumeBar.value = 0;
         updateVolumeSliderFill(0);
-        state.isMuted = true;
         volIconSvg.outerHTML = ICONS.volumeX;
       }
     });
   }
 
   if (playerVolumeBar) {
-    updateVolumeSliderFill(playerVolumeBar.value ? parseFloat(playerVolumeBar.value) : 0.8);
+    const initVol = playerVolumeBar.value ? parseFloat(playerVolumeBar.value) : 0.8;
+    updateVolumeSliderFill(initVol);
     playerVolumeBar.addEventListener("input", (e) => {
       const val = parseFloat(e.target.value);
-      state.audio.volume = val;
+      setPlayerVolume(val);
       updateVolumeSliderFill(val);
       state.isMuted = val === 0;
       if (state.isMuted) {
@@ -987,6 +1147,12 @@ function initAudio() {
 
 function playTrack(track) {
   if (!track) return;
+  setupWebAudioPipeline();
+  if (audioCtx && audioCtx.state === "suspended") {
+    audioCtx.resume().catch(() => {});
+  }
+  resetNormalizationForNewTrack();
+
   // Add current track to history before switching to new track
   if (state.currentPlayingTrack && state.currentPlayingTrack.id !== track.id) {
     state.playHistory.push(state.currentPlayingTrack);
@@ -1047,6 +1213,10 @@ function togglePlayPause() {
     return;
   }
   if (!state.audio) return;
+  setupWebAudioPipeline();
+  if (audioCtx && audioCtx.state === "suspended") {
+    audioCtx.resume().catch(() => {});
+  }
   if (state.isPlaying) {
     state.audio.pause();
   } else {
@@ -1125,9 +1295,8 @@ async function loadInitialData() {
   }
 
   await loadPlaylists();
-  if (state.appMode === "player") {
-    switchAppMode("player");
-  }
+  const startupMode = state.defaultAppMode || "player";
+  switchAppMode(startupMode);
 }
 
 async function checkSettingsStatus() {
@@ -1167,6 +1336,16 @@ async function checkSettingsStatus() {
     if (data.analyze_tempo !== undefined) {
       if (sidebarAnalyzeTempoCheckbox) sidebarAnalyzeTempoCheckbox.checked = data.analyze_tempo;
       if (settingsAnalyzeTempo) settingsAnalyzeTempo.checked = data.analyze_tempo;
+    }
+
+    if (data.audio_gain_normalization !== undefined) {
+      state.gainNormalization = data.audio_gain_normalization;
+      if (settingsGainNormalization) settingsGainNormalization.checked = data.audio_gain_normalization;
+    }
+
+    if (data.default_app_mode !== undefined) {
+      state.defaultAppMode = data.default_app_mode;
+      if (settingsDefaultAppMode) settingsDefaultAppMode.value = data.default_app_mode;
     }
   } catch (err) {
     console.error("Settings status check error:", err);
@@ -2607,6 +2786,16 @@ async function openSettings() {
       if (settingsAnalyzeTempo) settingsAnalyzeTempo.checked = s.analyze_tempo;
       if (sidebarAnalyzeTempoCheckbox) sidebarAnalyzeTempoCheckbox.checked = s.analyze_tempo;
     }
+    if (s.audio_gain_normalization !== undefined) {
+      if (settingsGainNormalization) settingsGainNormalization.checked = s.audio_gain_normalization;
+    } else {
+      if (settingsGainNormalization) settingsGainNormalization.checked = state.gainNormalization;
+    }
+    if (s.default_app_mode !== undefined) {
+      if (settingsDefaultAppMode) settingsDefaultAppMode.value = s.default_app_mode;
+    } else {
+      if (settingsDefaultAppMode) settingsDefaultAppMode.value = state.defaultAppMode || "player";
+    }
     const currentLang = window.getCurrentLanguage ? window.getCurrentLanguage() : (s.language || "en");
     if (settingsLanguage) settingsLanguage.value = currentLang;
 
@@ -2626,6 +2815,8 @@ async function saveSettingsData() {
   const sep = settingsSeparator.value;
   const customFrames = settingsWriteCustom.checked;
   const analyzeTempo = settingsAnalyzeTempo ? settingsAnalyzeTempo.checked : true;
+  const gainNormalization = settingsGainNormalization ? settingsGainNormalization.checked : true;
+  const defaultAppMode = settingsDefaultAppMode ? settingsDefaultAppMode.value : "player";
   const lang = settingsLanguage ? settingsLanguage.value : (window.getCurrentLanguage ? window.getCurrentLanguage() : "en");
 
   if (!state.modelCascade || state.modelCascade.length === 0) {
@@ -2637,10 +2828,16 @@ async function saveSettingsData() {
     window.setLanguage(lang);
   }
 
+  state.gainNormalization = gainNormalization;
+  state.defaultAppMode = defaultAppMode;
+  localStorage.setItem("soundscope_default_mode", defaultAppMode);
+
   const payload = {
     tag_separator: sep,
     write_custom_frames: customFrames,
     analyze_tempo: analyzeTempo,
+    audio_gain_normalization: gainNormalization,
+    default_app_mode: defaultAppMode,
     language: lang,
     model_cascade: state.modelCascade
   };
@@ -2712,9 +2909,16 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-function getTrackCoverUrl(trackId, version = null) {
-  if (!trackId) return "";
-  if (version) return `/api/cover/${trackId}?v=${version}`;
+function getTrackCoverUrl(trackOrId, version = null) {
+  if (!trackOrId && trackOrId !== 0) return "";
+  let trackId = trackOrId;
+  let v = version;
+  if (typeof trackOrId === "object" && trackOrId !== null) {
+    trackId = trackOrId.id;
+    v = version || trackOrId.cover_v || (trackOrId.file_path ? btoa(encodeURIComponent(trackOrId.file_path)).substring(0, 8) : null);
+  }
+  if (!trackId && trackId !== 0) return "";
+  if (v) return `/api/cover/${trackId}?v=${encodeURIComponent(v)}`;
   return `/api/cover/${trackId}`;
 }
 window.getTrackCoverUrl = getTrackCoverUrl;
@@ -2853,10 +3057,9 @@ function initPlayerMode() {
     }
   });
 
-  // Check saved mode
-  if (state.appMode === "player") {
-    switchAppMode("player");
-  }
+  // Set startup mode (default: Player Mode)
+  const initialMode = state.defaultAppMode || "player";
+  switchAppMode(initialMode);
 }
 
 function switchAppMode(mode) {

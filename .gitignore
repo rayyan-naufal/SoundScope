@@ -94,7 +94,22 @@ logs/
 ehthumbs.db
 Thumbs.db
 desktop.ini
+*.lnk
+
+# Android & Gradle Build Artifacts
+android/.gradle/
+android/.kotlin/
+android/local.properties
+android/build/
+android/*/build/
+android/.idea/
+*.apk
+*.aab
+*.ap_
+*.dex
 
 # ClickUp Integration Scripts & Tooling
-scripts/
 scripts/*
+!scripts/setup_shortcut.vbs
+!scripts/generate_icons.py
+

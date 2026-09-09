@@ -92,7 +92,8 @@ async function main() {
       `--window-size=1200,800`,
       `--user-data-dir=${userDataDir}`,
       '--no-first-run',
-      '--no-default-browser-check'
+      '--no-default-browser-check',
+      '--disable-background-mode'
     ];
 
     console.log(`[SoundScope] Launching native window via ${path.basename(browserExe)}...`);

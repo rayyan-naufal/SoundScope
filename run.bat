@@ -1,4 +1,4 @@
 @echo off
-title SoundScope
 cd /d "%~dp0"
-node run.js
+start "" wscript.exe //nologo "%~dp0SoundScope.vbs"
+exit

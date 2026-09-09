@@ -155,6 +155,17 @@ async function readAudioFile(filePath) {
 
   const tagsList = formatTrackTags(parentGenre, genre, subGenre, decade, []);
 
+  let cover_v = null;
+  if (hasCover) {
+    const rawKey = `${filePath}_${fileSize}`;
+    let hash = 0;
+    for (let i = 0; i < rawKey.length; i++) {
+      hash = ((hash << 5) - hash) + rawKey.charCodeAt(i);
+      hash |= 0;
+    }
+    cover_v = Math.abs(hash).toString(36);
+  }
+
   return {
     file_path: filePath,
     file_name: fileName,
@@ -171,6 +182,7 @@ async function readAudioFile(filePath) {
     tempo,
     tags: tagsList,
     has_cover: hasCover,
+    cover_v: cover_v,
     status: "unprocessed"
   };
 }
@@ -241,7 +253,13 @@ async function extractCoverBytes(filePath) {
 }
 
 function invalidateCoverCache(filePath) {
-  coverCache.delete(filePath);
+  if (filePath) {
+    coverCache.delete(filePath);
+  }
+}
+
+function clearCoverCache() {
+  coverCache.clear();
 }
 
 module.exports = {
@@ -249,5 +267,6 @@ module.exports = {
   readAudioFile,
   scanDirectory,
   extractCoverBytes,
-  invalidateCoverCache
+  invalidateCoverCache,
+  clearCoverCache
 };

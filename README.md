@@ -42,13 +42,16 @@ GEMINI_API_KEY=your_gemini_api_key_here
 
 ## Usage
 
-### Run Desktop Window (Lightweight Edge App Container)
-On Windows, simply double-click `run.bat` or run:
-
+### Run Desktop Window (Lightweight Native App Container)
+On Windows, you can launch SoundScope with **no command prompt window**:
+- Double-click **`SoundScope.lnk`** (App shortcut with custom icon on desktop or in folder)
+- Or double-click **`SoundScope.vbs`** / **`run.bat`** (runs silently in the background)
+- Or run via terminal:
 ```bash
 npm run app
 # or: node run.js
 ```
+*Tip: To run in debug mode with console output visible, run `run_debug.bat`.*
 
 ### Run as Local Web Server
 To run as a web server without launching the desktop window:
